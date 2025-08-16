@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.laba"},{"l":"com.laba.controller"},{"l":"com.laba.dao"},{"l":"com.laba.entity"},{"l":"com.laba.impl"},{"l":"com.laba.service"},{"l":"com.laba.specification"},{"l":"com.laba.util"}];updateSearchResults();
