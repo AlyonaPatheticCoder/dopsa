@@ -1,194 +1,176 @@
 package com.laba.controller;
-import com.laba.ServiceException;
-import com.laba.entity.Owner;
-import com.laba.entity.Cat;
+import com.laba.dto.OwnerDto;
 import com.laba.service.OwnerService;
+import com.laba.validation.MaxLengthProperty;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 /**
  * Controller class for managing Owners.
  * Handles user requests to OwnerService.
  */
+@RestController
+@RequestMapping("/api/owners")
+@Validated
 public class OwnerController {
+
     private final OwnerService ownerService;
 
     /**
-     * Constructor of CatController.
+     * Instantiates a new Owner controller.
      *
-     * @param ownerService service used for cat operations, must not be null
-     * @throws IllegalArgumentException if catService is null
+     * @param ownerService the owner service
      */
+    @Autowired
     public OwnerController(OwnerService ownerService) {
         this.ownerService = ownerService;
     }
 
     /**
-     * Saves a new owner.
+     * Gets owner by id.
      *
-     * @param owner the owner to save
+     * @param id the id
+     * @return the owner by id
      */
-    public void createOwner(Owner owner) {
-        try {
-            ownerService.saveOwner(owner);
-            System.out.println("Owner saved successfully");
-        } catch (ServiceException | IllegalArgumentException e) {
-            System.err.println("Failed to save owner: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Unexpected fail saving owner: " + e.getMessage());
-        }
+    @GetMapping("/{id}")
+    public ResponseEntity<OwnerDto> getOwnerById(@PathVariable @Positive Long id) {
+        OwnerDto owner = ownerService.getOwnerById(id);
+        if (owner == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(owner);
     }
 
     /**
-     * Updates an existing owner.
+     * Gets all owners.
      *
-     * @param owner the owner to update
+     * @return the all owners
      */
-    public void updateOwner(Owner owner) {
-        try {
-            ownerService.updateOwner(owner);
-            System.out.println("Owner updated successfully.");
-        } catch (ServiceException | IllegalArgumentException e) {
-            System.err.println("Failed to update owner: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Unexpected fail updating owner: " + e.getMessage());
-        }
+    @GetMapping
+    public ResponseEntity<List<OwnerDto>> getAllOwners() {
+        return ResponseEntity.ok(ownerService.getAllOwners());
     }
 
     /**
-     * Deletes an owner by id.
+     * Find owners by name response entity.
      *
-     * @param id the id of the owner
+     * @param name the name
+     * @return the response entity
      */
-    public void deleteOwnerById(Long id) {
-        try {
-            Owner owner = ownerService.getOwnerById(id);
-            if (owner == null) {
-                System.out.println("Owner not found with id: " + id);
-                return;
-            }
-            ownerService.deleteOwner(owner);
-            System.out.println("Owner deleted successfully");
-        } catch (ServiceException | IllegalArgumentException | IllegalStateException e) {
-            System.err.println("Failed to delete owner: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Unexpected fail deleting owner: " + e.getMessage());
-        }
+    @GetMapping("/search/by-name")
+    public ResponseEntity<List<OwnerDto>> findOwnersByName(
+            @RequestParam @NotBlank @MaxLengthProperty(
+                    property = "validation.max-length.Owner-name",
+                    message = "Owner name must not exceed {max} characters"
+            ) String name) {
+        return ResponseEntity.ok(ownerService.findOwnersByName(name));
     }
 
     /**
-     * Finds an owner by id.
+     * Find owners by cat name response entity.
      *
-     * @param id the id of the owner
-     * @return the found owner or null if not found
+     * @param catName the cat name
+     * @return the response entity
      */
-    public Owner findOwnerById(Long id) {
-        try {
-            Owner owner = ownerService.getOwnerById(id);
-            if (owner == null) {
-                System.out.println("Owner not found with id: " + id);
-            } else {
-                System.out.println("Found owner: " + owner);
-            }
-            return owner;
-        } catch (ServiceException | IllegalArgumentException e) {
-            System.err.println("Failed to find owner: " + e.getMessage());
-            return null;
-        } catch (Exception e) {
-            System.err.println("Unexpected error finding owner: " + e.getMessage());
-            return null;
-        }
+    @GetMapping("/search/by-cat-name")
+    public ResponseEntity<List<OwnerDto>> findOwnersByCatName(
+            @RequestParam("catName") @NotBlank @MaxLengthProperty(
+                    property = "validation.max-length.cat-name",
+                    message = "Cat name must not exceed {max} characters"
+            ) String catName) {
+        return ResponseEntity.ok(ownerService.findOwnersByCatName(catName));
     }
 
     /**
-     * Returns all owners.
+     * Find owner by cat id response entity.
      *
-     * @return list of all owners
+     * @param catId the cat id
+     * @return the response entity
      */
-    public List<Owner> findAllOwners() {
-        try {
-            List<Owner> owners = ownerService.getAllOwners();
-            return owners;
-        } catch (ServiceException | IllegalArgumentException e) {
-            System.err.println("Failed to get owners: " + e.getMessage());
-            return List.of();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return List.of();
-        }
+    @GetMapping("/search/by-cat-id/{catId}")
+    public ResponseEntity<OwnerDto> findOwnerByCatId(@PathVariable @Positive Long catId) {
+        return ResponseEntity.ok(ownerService.findOwnerByCatId(catId));
     }
 
     /**
-     * Finds owners by their name.
+     * Create owner response entity.
      *
-     * @param name the name to search for
-     * @return list of matching owners
+     * @param ownerDto the owner dto
+     * @return the response entity
      */
-    public List<Owner> findOwnersByName(String name) {
-        try {
-            List<Owner> owners = ownerService.findOwnersByName(name);
-            System.out.println("Found " + owners.size() + " owners with name " + name);
-            System.out.println("List of found owners: " + owners);
-            return owners;
-        } catch (ServiceException | IllegalArgumentException e) {
-            System.err.println("Failed to find owners by name: " + e.getMessage());
-            return List.of();
-        }
+    @PostMapping
+    public ResponseEntity<String> createOwner(@Valid @RequestBody OwnerDto ownerDto) {
+        ownerService.saveOwner(ownerDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body("Owner created successfully");
     }
 
     /**
-     * Finds owners by their cat's name.
+     * Update owner response entity.
      *
-     * @param catName the cat's name
-     * @return list of owners who have a cat with the given name
+     * @param id       the id
+     * @param ownerDto the owner dto
+     * @return the response entity
      */
-    public List<Owner> findOwnersByCatName(String catName) {
-        try {
-            List<Owner> owners = ownerService.findOwnersByCatName(catName);
-            System.out.println("Found " + owners.size() + " owners with cat name " + catName);
-            System.out.println("List of found owners: " + owners);
-            return owners;
-        } catch (ServiceException | IllegalArgumentException e) {
-            System.err.println("Failed to find owners by cat name: " + e.getMessage());
-            return List.of();
-        }
+    @PutMapping("/{id}")
+    public ResponseEntity<String> updateOwner(@PathVariable @Positive Long id,
+                                              @Valid @RequestBody OwnerDto ownerDto) {
+        ownerDto.setId(id);
+        ownerService.updateOwner(ownerDto);
+        return ResponseEntity.ok("Owner updated successfully");
     }
 
     /**
-     * Finds an owner by a cat's id.
+     * Delete owner response entity.
      *
-     * @param catId the id of the cat
-     * @return the owner of the cat or null if not found
+     * @param id the id
+     * @return the response entity
      */
-    public Owner findOwnerByCatId(Long catId) {
-        try {
-            Owner owner = ownerService.findOwnerByCatId(catId);
-            if (owner == null) {
-                System.out.println("Owner not found for cat id: " + catId);
-            } else {
-                System.out.println("Found owner: " + owner);
-            }
-            return owner;
-        } catch (ServiceException | IllegalArgumentException e) {
-            System.err.println("Failed to find owner by cat id: " + e.getMessage());
-            return null;
-        }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteOwner(@PathVariable @Positive Long id) {
+        ownerService.deleteOwner(id);
+        return ResponseEntity.ok("Owner deleted successfully");
     }
 
     /**
-     * Returns all cats for a given owner id.
+     * Find owners by filter response entity.
      *
-     * @param ownerId the id of the owner
-     * @return list of cats belonging to the owner
+     * @param filter the filter
+     * @return the response entity
      */
-    public List<Cat> getCatsByOwnerId(Long ownerId) {
-        try {
-            List<Cat> cats = ownerService.getCatsByOwnerId(ownerId);
-            System.out.println("Found " + cats.size() + " cats for owner id: " + ownerId);
-            System.out.println("List of found cats: " + cats);
-            return cats;
-        } catch (ServiceException | IllegalArgumentException e) {
-            System.err.println("Failed to get cats by owner id: " + e.getMessage());
-            return List.of();
-        }
+    @PostMapping("/search/filter")
+    public ResponseEntity<List<OwnerDto>> findOwnersByFilter(@RequestBody OwnerDto filter) {
+        return ResponseEntity.ok(ownerService.findOwnersByFilter(filter));
+    }
+
+    /**
+     * Add cat to owner response entity.
+     *
+     * @param ownerId the owner id
+     * @param catId   the cat id
+     * @return the response entity
+     */
+    @PostMapping("/{ownerId}/cats/{catId}")
+    public ResponseEntity<String> addCatToOwner(@PathVariable @Positive Long ownerId, @PathVariable @Positive Long catId) {
+        ownerService.addCatToOwner(ownerId, catId);
+        return ResponseEntity.ok("Cat added to owner successfully");
+    }
+
+    /**
+     * Remove cat from owner response entity.
+     *
+     * @param ownerId the owner id
+     * @param catId   the cat id
+     * @return the response entity
+     */
+    @DeleteMapping("/{ownerId}/cats/{catId}")
+    public ResponseEntity<String> removeCatFromOwner(@PathVariable @Positive Long ownerId, @PathVariable @Positive Long catId) {
+        ownerService.removeCatFromOwner(ownerId, catId);
+        return ResponseEntity.ok("Cat removed from owner successfully");
     }
 }

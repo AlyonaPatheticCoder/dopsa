@@ -1,4 +1,5 @@
 package com.laba.entity;
+
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -6,7 +7,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Represents an Owner entity.
+ * Owner entity.
  */
 @Entity
 @Table(name = "owners")
@@ -22,133 +23,59 @@ public class Owner {
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Cat> cats = new ArrayList<>();
 
-
     /**
-     * Default constructor.
+     * Instantiates a new Owner.
      */
     public Owner() {}
-
-
-    /**
-     * Builder class for creating {@link Owner} instances.
-     */
-    public static class Builder {
-        private String name;
-        private LocalDate birthday;
-        private List<Cat> cats = new ArrayList<>();
-
-        public Builder name(String name) {
-            this.name = name;
-            return this;
-        }
-
-        public Builder birthday(LocalDate birthday) {
-            this.birthday = birthday;
-            return this;
-        }
-
-        public Builder cats(List<Cat> cats) {
-            this.cats = cats != null ? new ArrayList<>(cats) : new ArrayList<>();
-            return this;
-        }
-
-        /**
-         * Adds a single cat to owner.
-         *
-         * @param cat the Cat to add
-         * @return this Builder instance
-         */
-        public Builder addCat(Cat cat) {
-            if (cat != null && !this.cats.contains(cat)) {
-                this.cats.add(cat);
-                cat.setOwner(null); // Owner will be set in build() to avoid overwriting
-            }
-            return this;
-        }
-
-        /**
-         * Builds a new {@link Owner} instance.
-         *
-         * @return Owner object
-         */
-        public Owner build() {
-            Owner owner = new Owner();
-            owner.setName(this.name);
-            owner.setBirthday(this.birthday);
-            owner.setCats(this.cats);
-
-            for (Cat cat : this.cats) {
-                if (cat.getOwner() != owner) {
-                    cat.setOwner(owner);
-                }
-            }
-
-            return owner;
-        }
-    }
 
     /**
      * Gets id.
      *
      * @return the id
      */
-    public Long getId() {
-        return id;
-    }
-
-    /**
-     * Gets name.
-     *
-     * @return the name
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Gets birthday.
-     *
-     * @return the birthday
-     */
-    public LocalDate getBirthday() {
-        return birthday;
-    }
-
-    /**
-     * Gets cats.
-     *
-     * @return the cats
-     */
-    public List<Cat> getCats() {
-        return cats;
-    }
+    public Long getId() { return id; }
 
     /**
      * Sets id.
      *
      * @param id the id
      */
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public void setId(Long id) { this.id = id; }
+
+    /**
+     * Gets name.
+     *
+     * @return the name
+     */
+    public String getName() { return name; }
 
     /**
      * Sets name.
      *
      * @param name the name
      */
-    public void setName(String name) {
-        this.name = name;
-    }
+    public void setName(String name) { this.name = name; }
+
+    /**
+     * Gets birthday.
+     *
+     * @return the birthday
+     */
+    public LocalDate getBirthday() { return birthday; }
 
     /**
      * Sets birthday.
      *
      * @param birthday the birthday
      */
-    public void setBirthday(LocalDate birthday) {
-        this.birthday = birthday;
-    }
+    public void setBirthday(LocalDate birthday) { this.birthday = birthday; }
+
+    /**
+     * Gets cats.
+     *
+     * @return the cats
+     */
+    public List<Cat> getCats() { return cats; }
 
     /**
      * Sets cats.
@@ -157,11 +84,17 @@ public class Owner {
      */
     public void setCats(List<Cat> cats) {
         this.cats = cats != null ? cats : new ArrayList<>();
+        for (Cat cat : this.cats) {
+            if (cat.getOwner() != this) {
+                cat.setOwner(this);
+            }
+        }
     }
 
     /**
-     * Adds a cat to the owner.
-     * @param cat the Cat to add
+     * Add cat.
+     *
+     * @param cat the cat
      */
     public void addCat(Cat cat) {
         if (cat != null && !cats.contains(cat)) {
@@ -171,8 +104,9 @@ public class Owner {
     }
 
     /**
-     * Removes a cat from the owner .
-     * @param cat the Cat to remove
+     * Remove cat.
+     *
+     * @param cat the cat
      */
     public void removeCat(Cat cat) {
         if (cat != null && cats.remove(cat)) {
@@ -194,16 +128,82 @@ public class Owner {
 
     @Override
     public String toString() {
-        return "Owner:\n" + "id: " + id + "\n" + "name: " + name + "\n" + "birthday: " + birthday + "\n" + "cats: " + cats;
+        return "Owner{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", birthday=" + birthday +
+                ", cats=" + cats.size() +
+                '}';
     }
 
     /**
-     * Checks if another owner has the same fields.
-     * @param other another Owner
-     * @return true if name and birthday match
+     * Is same boolean.
+     *
+     * @param other the other owner
+     * @return the boolean
      */
     public boolean isSame(Owner other) {
         if (other == null) return false;
-        return Objects.equals(name, other.name) && Objects.equals(birthday, other.birthday);
+        return Objects.equals(name, other.name) &&
+                Objects.equals(birthday, other.birthday);
+    }
+
+    /**
+     * Builder for Owner.
+     */
+    public static class Builder {
+        private String name;
+        private LocalDate birthday;
+        private List<Cat> cats = new ArrayList<>();
+
+        /**
+         * Name builder.
+         *
+         * @param name the name
+         * @return the builder
+         */
+        public Builder name(String name) { this.name = name; return this; }
+
+        /**
+         * Birthday builder.
+         *
+         * @param birthday the birthday
+         * @return the builder
+         */
+        public Builder birthday(LocalDate birthday) { this.birthday = birthday; return this; }
+
+        /**
+         * Cats builder.
+         *
+         * @param cats the cats
+         * @return the builder
+         */
+        public Builder cats(List<Cat> cats) { this.cats = cats != null ? new ArrayList<>(cats) : new ArrayList<>(); return this; }
+
+        /**
+         * Add cat builder.
+         *
+         * @param cat the cat
+         * @return the builder
+         */
+        public Builder addCat(Cat cat) { if (cat != null && !cats.contains(cat)) cats.add(cat); return this; }
+
+        /**
+         * Build owner.
+         *
+         * @return the owner
+         */
+        public Owner build() {
+            Owner owner = new Owner();
+            owner.setName(name);
+            owner.setBirthday(birthday);
+            owner.setCats(cats);
+            for (Cat cat : cats) {
+                if (cat.getOwner() != owner) {
+                    cat.setOwner(owner);
+                }
+            }
+            return owner;
+        }
     }
 }

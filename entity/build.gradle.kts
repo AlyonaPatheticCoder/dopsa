@@ -1,7 +1,10 @@
 plugins {
-    java
+    id("java-library")
+    id("io.spring.dependency-management")
 }
 
 dependencies {
-    implementation("jakarta.persistence:jakarta.persistence-api:3.1.0")
+    implementation("jakarta.persistence:jakarta.persistence-api")
+//    compileOnly("org.projectlombok:lombok")
+//    annotationProcessor("org.projectlombok:lombok")
 }

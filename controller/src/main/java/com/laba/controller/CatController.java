@@ -1,8 +1,15 @@
 package com.laba.controller;
-
-import com.laba.ServiceException;
-import com.laba.entity.Cat;
+import com.laba.dto.CatDto;
 import com.laba.service.CatService;
+import com.laba.validation.MaxLengthProperty;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 
 import java.util.List;
 
@@ -10,161 +17,158 @@ import java.util.List;
  * Controller class for managing Cats.
  * Handles user requests to CatService.
  */
+@RestController
+@RequestMapping("/api/cats")
+@Validated
 public class CatController {
+
     private final CatService catService;
 
     /**
-     * Constructor of CatController.
+     * Instantiates a new Cat controller.
      *
-     * @param catService service used for cat operations, must not be null
-     * @throws IllegalArgumentException if catService is null
+     * @param catService the cat service
      */
-    public CatController(CatService catService) {
-        this.catService = catService;
+    @Autowired
+    public CatController(CatService catService) { this.catService = catService;}
+
+    /**
+     * Gets cat by id.
+     *
+     * @param id the id
+     * @return the cat by id
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<CatDto> getCatById(@PathVariable @Positive Long id) {
+        CatDto cat = catService.getCatById(id);
+        if (cat == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(cat);
     }
 
     /**
-     * Saves a new cat.
+     * Gets all cats.
      *
-     * @param cat the cat to save
+     * @return the all cats
      */
-    public void createCat(Cat cat) {
-        try {
-            catService.saveCat(cat);
-            System.out.println("Cat saved successfully");
-        } catch (ServiceException | IllegalArgumentException e) {
-            System.err.println("Failed to save cat: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Unexpected save fail: " + e.getMessage());
-        }
+    @GetMapping
+    public ResponseEntity<List<CatDto>> getAllCats() { return ResponseEntity.ok(catService.getAllCats());}
+
+    /**
+     * Find cats by name response entity.
+     *
+     * @param name the name
+     * @return the response entity
+     */
+    @GetMapping("/search/by-name")
+    public ResponseEntity<List<CatDto>> findCatsByName(
+            @RequestParam @NotBlank @MaxLengthProperty(
+                    property = "validation.max-length.cat-name",
+                    message = "Cat name must not exceed {max} characters"
+            ) String name) {
+        return ResponseEntity.ok(catService.findCatsByName(name));
     }
 
     /**
-     * Updates an existing cat.
+     * Find cats by owner name response entity.
      *
-     * @param cat the cat to update
+     * @param ownerName the owner name
+     * @return the response entity
      */
-    public void updateCat(Cat cat) {
-        try {
-            catService.updateCat(cat);
-            System.out.println("Cat updated successfully");
-        } catch (ServiceException | IllegalArgumentException e) {
-            System.err.println("Failed to update cat: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Unexpected update fail: " + e.getMessage());
-        }
+    @GetMapping("/search/by-owner-name")
+    public ResponseEntity<List<CatDto>> findCatsByOwnerName(
+            @RequestParam @NotBlank @MaxLengthProperty(
+                    property = "validation.max-length.owner-name",
+                    message = "Owner name must not exceed {max} characters"
+            ) String ownerName) {
+        return ResponseEntity.ok(catService.findCatsByOwnerName(ownerName));
     }
 
     /**
-     * Deletes a cat by its id.
+     * Find cats by owner id response entity.
      *
-     * @param id the id of the cat
+     * @param ownerId the owner id
+     * @return the response entity
      */
-    public void deleteCatById(Long id) {
-        try {
-            Cat cat = catService.getCatById(id);
-            if (cat == null) {
-                System.out.println("Cat not found with id: " + id);
-                return;
-            }
-            catService.deleteCat(cat);
-            System.out.println("Cat deleted successfully");
-        } catch (ServiceException | IllegalArgumentException e) {
-            System.err.println("Failed to delete cat: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Unexpected delete fail: " + e.getMessage());
-        }
+    @GetMapping("/search/by-owner-id/{ownerId}")
+    public ResponseEntity<List<CatDto>> findCatsByOwnerId(@PathVariable @Positive Long ownerId) {
+        return ResponseEntity.ok(catService.findCatsByOwnerId(ownerId));
     }
 
     /**
-     * Finds a cat by its id.
+     * Create cat response entity.
      *
-     * @param id the id of the cat
-     * @return the found cat or null if not found
+     * @param catDto the cat dto
+     * @return the response entity
      */
-    public Cat findCatById(Long id) {
-        try {
-            Cat cat = catService.getCatById(id);
-            if (cat == null) {
-                System.out.println("Cat not found with id: " + id);
-            } else {
-                System.out.println("Found cat: " + cat);
-            }
-            return cat;
-        } catch (ServiceException | IllegalArgumentException e) {
-            System.err.println("Failed to find cat: " + e.getMessage());
-            return null;
-        } catch (Exception e) {
-            System.err.println("Unexpected fail finding cat: " + e.getMessage());
-            return null;
-        }
+    @PostMapping
+    public ResponseEntity<String> createCat(@RequestBody @Valid CatDto catDto) {
+        catService.saveCat(catDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body("Cat created successfully");
     }
 
     /**
-     * Returns all cats.
+     * Update cat response entity.
      *
-     * @return list of all cats
+     * @param id     the id
+     * @param catDto the cat dto
+     * @return the response entity
      */
-    public List<Cat> findAllCats() {
-        try {
-            List<Cat> cats = catService.getAllCats();
-            System.out.println("Found " + cats.size() + " cats");
-            System.out.println("List of found cats: " + cats);
-            return cats;
-        } catch (ServiceException e) {
-            System.err.println("Failed to get cats: " + e.getMessage());
-            return List.of();
-        }
+    @PutMapping("/{id}")
+    public ResponseEntity<String> updateCat(@PathVariable @Positive Long id,
+                                            @RequestBody @Valid CatDto catDto) {
+        catDto.setId(id);
+        catService.updateCat(catDto);
+        return ResponseEntity.ok("Cat updated successfully");
     }
 
     /**
-     * Finds cats by their name.
+     * Delete cat response entity.
      *
-     * @param name the name of the cats
-     * @return list of matching cats
+     * @param id the id
+     * @return the response entity
      */
-    public List<Cat> findCatsByName(String name) {
-        try {
-            List<Cat> cats = catService.findCatsByName(name);
-            System.out.println("Found " + cats.size() + " cats with name " + name);
-            System.out.println("List of found cats: " + cats);
-            return cats;
-        } catch (ServiceException | IllegalArgumentException e) {
-            System.err.println("Failed to find cats by name: " + e.getMessage());
-            return List.of();
-        }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteCat(@PathVariable @Positive Long id) {
+        catService.deleteCat(id);
+        return ResponseEntity.ok("Cat deleted successfully");
     }
 
     /**
-     * Finds cats by their owner's name.
+     * Find cats by filter response entity.
      *
-     * @param ownerName the owner's name
-     * @return list of matching cats
+     * @param filter the filter
+     * @return the response entity
      */
-    public List<Cat> findCatsByOwnerName(String ownerName) {
-        try {
-            List<Cat> cats = catService.findCatsByOwnerName(ownerName);
-            System.out.println("Found " + cats.size() + " cats with owner " + ownerName);
-            System.out.println("List of found cats: " + cats);
-            return cats;
-        } catch (ServiceException | IllegalArgumentException e) {
-            System.err.println("Failed to find cats by owner name: " + e.getMessage());
-            return List.of();
-        }
+    @PostMapping("/search/filter")
+    public ResponseEntity<List<CatDto>> findCatsByFilter(@RequestBody CatDto filter) {
+        return ResponseEntity.ok(catService.findCatsByFilter(filter));
     }
 
     /**
-     * Adds a friend to a cat.
+     * Add friend response entity.
      *
-     * @param catId the cat's id
-     * @param friendId the friend's id
+     * @param catId    the cat id
+     * @param friendId the friend id
+     * @return the response entity
      */
-    public void addFriend(Long catId, Long friendId) {
-        try {
-            catService.addFriend(catId, friendId);
-            System.out.println("Friend added successfully");
-        } catch (ServiceException | IllegalArgumentException e) {
-            System.err.println("Failed to add friend: " + e.getMessage());
-        }
+    @PostMapping("/{catId}/friends/{friendId}")
+    public ResponseEntity<String> addFriend(@PathVariable @Positive Long catId,
+                                            @PathVariable @Positive Long friendId) {
+        catService.addFriend(catId, friendId);
+        return ResponseEntity.ok("Friend added successfully");
+    }
+
+    /**
+     * Remove friend response entity.
+     *
+     * @param catId    the cat id
+     * @param friendId the friend id
+     * @return the response entity
+     */
+    @DeleteMapping("/{catId}/friends/{friendId}")
+    public ResponseEntity<String> removeFriend(@PathVariable @Positive Long catId,
+                                               @PathVariable @Positive Long friendId) {
+        catService.removeFriend(catId, friendId);
+        return ResponseEntity.ok("Friend removed successfully");
     }
 }

@@ -1,7 +1,7 @@
 package com.laba.entity;
 
 /**
- * The enum Color.
+ * Enum for cat colors.
  */
 public enum Color {
     WHITE,
@@ -9,5 +9,20 @@ public enum Color {
     GINGER,
     GREY,
     BROWN,
-    RAINBOW
+    RAINBOW;
+
+    /**
+     * Checks if a given string matches any enum constant (case-insensitive).
+     * @param value string value
+     * @return corresponding Color or null if not found
+     */
+    public static Color fromString(String value) {
+        if (value == null) return null;
+        for (Color color : Color.values()) {
+            if (color.name().equalsIgnoreCase(value)) {
+                return color;
+            }
+        }
+        return null;
+    }
 }

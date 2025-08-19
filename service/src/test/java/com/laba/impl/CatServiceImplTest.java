@@ -1,327 +1,314 @@
 package com.laba.impl;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-import com.laba.DaoException;
 import com.laba.dao.CatDao;
 import com.laba.dao.OwnerDao;
+import com.laba.dto.CatDto;
 import com.laba.entity.Cat;
 import com.laba.entity.Color;
 import com.laba.entity.Owner;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
- * Unit tests for {@link CatServiceImpl} using Mockito.
- * <p>
- * Tests methods of CatService.
- * </p>
+ * Unit tests foe CatService.
  */
+
 @ExtendWith(MockitoExtension.class)
 class CatServiceImplTest {
-
     @Mock
     private CatDao catDao;
-
     @Mock
     private OwnerDao ownerDao;
-
     @InjectMocks
     private CatServiceImpl catService;
 
-    private Owner owner;
     private Cat cat;
+    private CatDto catDto;
+    private Owner owner;
 
+    /**
+     * Sets up.
+     */
     @BeforeEach
     void setUp() {
-        owner = new Owner.Builder()
-                .name("O")
-                .build();
+        owner = new Owner();
         owner.setId(1L);
+        owner.setName("O");
 
-        cat = new Cat.Builder()
-                .name("C")
-                .birthday(LocalDate.of(2022, 1, 1))
-                .color(Color.WHITE)
-                .breed("B")
-                .owner(owner)
-                .build();
+        cat = new Cat();
         cat.setId(1L);
+        cat.setName("C");
+        cat.setBreed("B");
+        cat.setColor(Color.BLACK);
+        cat.setBirthday(LocalDate.of(2022, 2, 24));
+        cat.setOwner(owner);
+        cat.setFriends(new ArrayList<>());
+        catDto = CatDto.fromEntity(cat);
+
+        ReflectionTestUtils.setField(catService, "maxOwnerNameLength", 50);
+        ReflectionTestUtils.setField(catService, "maxCatNameLength", 50);
+        ReflectionTestUtils.setField(catService, "maxCatBreedLength", 50);
     }
 
+    /**
+     * Test get cat by id found.
+     */
     @Test
-    void saveCat_success() throws DaoException {
-        when(ownerDao.findById(owner.getId())).thenReturn(owner);
-        doNothing().when(catDao).save(cat);
-        assertDoesNotThrow(() -> catService.saveCat(cat));
-        verify(catDao).save(cat);
+    void testGetCatByIdFound() {
+        when(catDao.findById(1L)).thenReturn(Optional.of(cat));
+        CatDto result = catService.getCatById(1L);
+        assertNotNull(result);
+        assertEquals(cat.getName(), result.getName());
     }
 
+    /**
+     * Test get cat by id not found.
+     */
     @Test
-    void saveCat_ownerDoesNotExist_throwsIllegalArgumentException() throws DaoException {
-        when(ownerDao.findById(owner.getId())).thenReturn(null);
-        assertThrows(IllegalArgumentException.class, () -> catService.saveCat(cat));
+    void testGetCatByIdNotFound() {
+        when(catDao.findById(2L)).thenReturn(Optional.empty());
+        CatDto result = catService.getCatById(2L);
+        assertNull(result);
     }
 
+    /**
+     * Test get cat by id null.
+     */
     @Test
-    void saveCat_nullCat_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> catService.saveCat(null));
-    }
-
-    @Test
-    void saveCat_nullName_throwsIllegalArgumentException() throws DaoException {
-        cat.setName(null);
-        //when(ownerDao.findById(owner.getId())).thenReturn(owner);
-        assertThrows(IllegalArgumentException.class, () -> catService.saveCat(cat));
-    }
-
-    @Test
-    void saveCat_emptyName_throwsIllegalArgumentException() throws DaoException {
-        cat.setName("  ");
-        //when(ownerDao.findById(owner.getId())).thenReturn(owner);
-        assertThrows(IllegalArgumentException.class, () -> catService.saveCat(cat));
-    }
-
-
-    @Test
-    void saveCat_nameTooLong_throwsIllegalArgumentException() throws DaoException {
-        cat.setName("C".repeat(31));
-        //when(ownerDao.findById(owner.getId())).thenReturn(owner);
-        assertThrows(IllegalArgumentException.class, () -> catService.saveCat(cat));
-    }
-
-    @Test
-    void saveCat_nullBirthday_throwsIllegalArgumentException() throws DaoException {
-        cat.setBirthday(null);
-        //when(ownerDao.findById(owner.getId())).thenReturn(owner);
-        assertThrows(IllegalArgumentException.class, () -> catService.saveCat(cat));
-    }
-
-    @Test
-    void saveCat_futureBirthday_throwsIllegalArgumentException() throws DaoException {
-        cat.setBirthday(LocalDate.now().plusDays(1));
-        //when(ownerDao.findById(owner.getId())).thenReturn(owner);
-        assertThrows(IllegalArgumentException.class, () -> catService.saveCat(cat));
-    }
-
-    @Test
-    void saveCat_nullColor_throwsIllegalArgumentException() throws DaoException {
-        cat.setColor(null);
-        //when(ownerDao.findById(owner.getId())).thenReturn(owner);
-        assertThrows(IllegalArgumentException.class, () -> catService.saveCat(cat));
-    }
-
-    @Test
-    void saveCat_nullOwner_throwsIllegalArgumentException() {
-        cat.setOwner(null);
-        assertThrows(IllegalArgumentException.class, () -> catService.saveCat(cat));
-    }
-
-    @Test
-    void saveCat_nullOwnerId_throwsIllegalArgumentException() {
-        cat.getOwner().setId(null);
-        assertThrows(IllegalArgumentException.class, () -> catService.saveCat(cat));
-    }
-
-    @Test
-    void saveCat_nullBreed_throwsIllegalArgumentException() throws DaoException {
-        cat.setBreed(null);
-        //when(ownerDao.findById(owner.getId())).thenReturn(owner);
-        assertThrows(IllegalArgumentException.class, () -> catService.saveCat(cat));
-    }
-
-    @Test
-    void saveCat_emptyBreed_throwsIllegalArgumentException() throws DaoException {
-        cat.setBreed("   ");
-        //when(ownerDao.findById(owner.getId())).thenReturn(owner);
-        assertThrows(IllegalArgumentException.class, () -> catService.saveCat(cat));
-    }
-
-    @Test
-    void updateCat_success() throws DaoException {
-        when(ownerDao.findById(owner.getId())).thenReturn(owner);
-        doNothing().when(catDao).update(cat);
-        assertDoesNotThrow(() -> catService.updateCat(cat));
-        verify(catDao).update(cat);
-    }
-
-    @Test
-    void updateCat_nullCat_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> catService.updateCat(null));
-    }
-
-    @Test
-    void updateCat_nullId_throwsIllegalArgumentException() {
-        cat.setId(null);
-        assertThrows(IllegalArgumentException.class, () -> catService.updateCat(cat));
-    }
-
-    @Test
-    void deleteCat_success() throws DaoException {
-        doNothing().when(catDao).delete(cat);
-        assertDoesNotThrow(() -> catService.deleteCat(cat));
-        verify(catDao).delete(cat);
-    }
-
-    @Test
-    void deleteCat_nullCat_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> catService.deleteCat(null));
-    }
-
-    @Test
-    void getCatById_success() throws DaoException {
-        when(catDao.findById(1L)).thenReturn(cat);
-        Cat result = catService.getCatById(1L);
-        assertEquals(cat, result);
-        verify(catDao).findById(1L);
-    }
-
-    @Test
-    void getCatById_nullId_throwsIllegalArgumentException() {
+    void testGetCatByIdNull() {
         assertThrows(IllegalArgumentException.class, () -> catService.getCatById(null));
     }
 
+    /**
+     * Test get all cats.
+     */
     @Test
-    void getAllCats_success() throws DaoException {
-        List<Cat> cats = Collections.singletonList(cat);
-        when(catDao.findAll()).thenReturn(cats);
-        List<Cat> result = catService.getAllCats();
-        assertEquals(cats, result);
-        verify(catDao).findAll();
+    void testGetAllCats() {
+        when(catDao.findAll()).thenReturn(List.of(cat));
+        List<CatDto> result = catService.getAllCats();
+        assertEquals(1, result.size());
+        assertEquals(cat.getName(), result.get(0).getName());
     }
 
+    /**
+     * Test find cats by name.
+     */
     @Test
-    void findCatsByName_success() throws DaoException {
-        List<Cat> cats = Collections.singletonList(cat);
-        when(catDao.findByName("C")).thenReturn(cats);
-        List<Cat> result = catService.findCatsByName("C");
-        assertEquals(cats, result);
-        verify(catDao).findByName("C");
+    void testFindCatsByName() {
+        when(catDao.findByNameIgnoreCase("C")).thenReturn(List.of(cat));
+        List<CatDto> result = catService.findCatsByName("C");
+        assertEquals(1, result.size());
     }
 
+    /**
+     * Test find cats by name invalid.
+     */
     @Test
-    void findCatsByName_nullOrEmpty_throwsIllegalArgumentException() {
+    void testFindCatsByNameInvalid() {
         assertThrows(IllegalArgumentException.class, () -> catService.findCatsByName(null));
-        assertThrows(IllegalArgumentException.class, () -> catService.findCatsByName(" "));
+        assertThrows(IllegalArgumentException.class, () -> catService.findCatsByName("   "));
+        assertThrows(IllegalArgumentException.class, () -> catService.findCatsByName("C".repeat(51)));
     }
 
+    /**
+     * Test find cats by owner name.
+     */
     @Test
-    void findCatsByOwnerName_success() throws DaoException {
-        List<Cat> cats = Collections.singletonList(cat);
-        when(catDao.findByOwnerName("O")).thenReturn(cats);
-
-        List<Cat> result = catService.findCatsByOwnerName("O");
-        assertEquals(cats, result);
-        verify(catDao).findByOwnerName("O");
+    void testFindCatsByOwnerName() {
+        when(catDao.findByOwner_NameIgnoreCase("O")).thenReturn(List.of(cat));
+        List<CatDto> result = catService.findCatsByOwnerName("O");
+        assertEquals(1, result.size());
     }
 
+    /**
+     * Test find cats by owner name invalid.
+     */
     @Test
-    void findCatsByOwnerName_nullOrEmpty_throwsIllegalArgumentException() {
+    void testFindCatsByOwnerNameInvalid() {
         assertThrows(IllegalArgumentException.class, () -> catService.findCatsByOwnerName(null));
-        assertThrows(IllegalArgumentException.class, () -> catService.findCatsByOwnerName(" "));
+        assertThrows(IllegalArgumentException.class, () -> catService.findCatsByOwnerName("   "));
+        assertThrows(IllegalArgumentException.class, () -> catService.findCatsByOwnerName("O".repeat(51)));
     }
 
+    /**
+     * Test find cats by owner id.
+     */
     @Test
-    void findCatsByOwnerId_success() throws DaoException {
-        List<Cat> cats = Collections.singletonList(cat);
-        when(catDao.findByOwnerId(1L)).thenReturn(cats);
-        List<Cat> result = catService.findCatsByOwnerId(1L);
-        assertEquals(cats, result);
-        verify(catDao).findByOwnerId(1L);
+    void testFindCatsByOwnerId() {
+        when(catDao.findByOwner_Id(1L)).thenReturn(List.of(cat));
+        List<CatDto> result = catService.findCatsByOwnerId(1L);
+        assertEquals(1, result.size());
     }
 
+    /**
+     * Test find cats by owner id null.
+     */
     @Test
-    void findCatsByOwnerId_nullId_throwsIllegalArgumentException() {
+    void testFindCatsByOwnerIdNull() {
         assertThrows(IllegalArgumentException.class, () -> catService.findCatsByOwnerId(null));
     }
 
+    /**
+     * Test find cats by filter null.
+     */
+// findCatsByFilter
     @Test
-    void findCatsByNameAndOwner_success() throws DaoException {
-        List<Cat> cats = Collections.singletonList(cat);
-        when(catDao.findByNameAndOwner("C", "O")).thenReturn(cats);
-
-        List<Cat> result = catService.findCatsByNameAndOwner("C", "O");
-        assertEquals(cats, result);
-        verify(catDao).findByNameAndOwner("C", "O");
+    void testFindCatsByFilterNull() {
+        when(catDao.findAll()).thenReturn(List.of(cat));
+        List<CatDto> result = catService.findCatsByFilter(null);
+        assertEquals(1, result.size());
     }
 
+    /**
+     * Test find cats by filter with fields.
+     */
     @Test
-    void findCatsByNameAndOwner_nullOrEmpty_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> catService.findCatsByNameAndOwner(null, "O"));
-        assertThrows(IllegalArgumentException.class, () -> catService.findCatsByNameAndOwner("C", null));
-        assertThrows(IllegalArgumentException.class, () -> catService.findCatsByNameAndOwner(" ", "O"));
+    void testFindCatsByFilterWithFields() {
+        CatDto filter = new CatDto();
+        filter.setName("C");
+        when(catDao.findAll(any(Specification.class))).thenReturn(List.of(cat));
+        List<CatDto> result = catService.findCatsByFilter(filter);
+        assertEquals(1, result.size());
     }
 
+    /**
+     * Test save cat success.
+     */
     @Test
-    void addFriend_success() throws DaoException {
-
-        Cat friend = new Cat.Builder()
-                .name("F")
-                .birthday(LocalDate.of(2024, 2, 2))
-                .color(Color.BROWN)
-                .breed("B")
-                .owner(owner)
-                .build();
-
-        friend.setId(2L);
-        when(catDao.findById(1L)).thenReturn(cat);
-        when(catDao.findById(2L)).thenReturn(friend);
-
-        catService.addFriend(1L, 2L);
-
-        assertTrue(cat.getFriends().contains(friend));
-        assertTrue(friend.getFriends().contains(cat));
-        verify(catDao).update(cat);
-        verify(catDao).update(friend);
+    void testSaveCatSuccess() {
+        when(ownerDao.existsById(1L)).thenReturn(true);
+        catService.saveCat(catDto);
+        verify(catDao, times(1)).save(any(Cat.class));
     }
 
+    /**
+     * Test save cat null.
+     */
     @Test
-    void addFriend_sameId_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> catService.addFriend(1L, 1L));
+    void testSaveCatNull() {
+        assertThrows(IllegalArgumentException.class, () -> catService.saveCat(null));
     }
 
+    /**
+     * Test update cat success.
+     */
     @Test
-    void addFriend_nullId_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> catService.addFriend(null, 2L));
-        assertThrows(IllegalArgumentException.class, () -> catService.addFriend(1L, null));
+    void testUpdateCatSuccess() {
+        when(ownerDao.existsById(1L)).thenReturn(true);
+        catService.updateCat(catDto);
+        verify(catDao, times(1)).save(any(Cat.class));
     }
 
+    /**
+     * Test update cat null.
+     */
     @Test
-    void removeFriend_success() throws DaoException {
+    void testUpdateCatNull() {
+        assertThrows(IllegalArgumentException.class, () -> catService.updateCat(null));
+    }
+
+    /**
+     * Test delete cat success.
+     */
+    @Test
+    void testDeleteCatSuccess() {
+        when(catDao.findById(1L)).thenReturn(Optional.of(cat));
+        catService.deleteCat(1L);
+        verify(catDao, times(1)).delete(cat);
+    }
+
+    /**
+     * Test delete cat not found.
+     */
+    @Test
+    void testDeleteCatNotFound() {
+        when(catDao.findById(2L)).thenReturn(Optional.empty());
+        assertThrows(IllegalArgumentException.class, () -> catService.deleteCat(2L));
+    }
+
+    /**
+     * Test delete cat null.
+     */
+    @Test
+    void testDeleteCatNull() {
+        assertThrows(IllegalArgumentException.class, () -> catService.deleteCat(null));
+    }
+
+    /**
+     * Test add friend success.
+     */
+    @Test
+    void testAddFriendSuccess() {
         Cat friend = new Cat();
         friend.setId(2L);
         friend.setFriends(new ArrayList<>());
-        cat.setFriends(new ArrayList<>(List.of(friend)));
-        friend.getFriends().add(cat);
-        when(catDao.findById(1L)).thenReturn(cat);
-        when(catDao.findById(2L)).thenReturn(friend);
-        catService.removeFriend(1L, 2L);
+        when(catDao.findById(1L)).thenReturn(Optional.of(cat));
+        when(catDao.findById(2L)).thenReturn(Optional.of(friend));
+        catService.addFriend(1L, 2L);
+        assertTrue(cat.getFriends().contains(friend));
+        assertTrue(friend.getFriends().contains(cat));
+        verify(catDao, times(2)).save(any(Cat.class));
+    }
 
+    /**
+     * Test add friend self.
+     */
+    @Test
+    void testAddFriendSelf() {
+        assertThrows(IllegalArgumentException.class, () -> catService.addFriend(1L, 1L));
+    }
+
+    /**
+     * Test add friend already friends.
+     */
+    @Test
+    void testAddFriendAlreadyFriends() {
+        Cat friend = new Cat();
+        friend.setId(2L);
+        cat.getFriends().add(friend);
+        friend.setFriends(new ArrayList<>(Set.of(cat)));
+        when(catDao.findById(1L)).thenReturn(Optional.of(cat));
+        when(catDao.findById(2L)).thenReturn(Optional.of(friend));
+        assertThrows(IllegalStateException.class, () -> catService.addFriend(1L, 2L));
+    }
+
+    /**
+     * Test remove friend success.
+     */
+    @Test
+    void testRemoveFriendSuccess() {
+        Cat friend = new Cat();
+        friend.setId(2L);
+        cat.getFriends().add(friend);
+        friend.setFriends(new ArrayList<>(Set.of(cat)));
+        when(catDao.findById(1L)).thenReturn(Optional.of(cat));
+        when(catDao.findById(2L)).thenReturn(Optional.of(friend));
+        catService.removeFriend(1L, 2L);
         assertFalse(cat.getFriends().contains(friend));
         assertFalse(friend.getFriends().contains(cat));
-        verify(catDao).update(cat);
-        verify(catDao).update(friend);
     }
 
+    /**
+     * Test remove friend not friends.
+     */
     @Test
-    void getFriends_success() throws DaoException {
-        cat.setFriends(new ArrayList<>());
-        when(catDao.findById(1L)).thenReturn(cat);
-        List<Cat> friends = catService.getFriends(1L);
-        assertNotNull(friends);
-        assertEquals(0, friends.size());
-    }
-
-    @Test
-    void getFriends_nullId_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> catService.getFriends(null));
+    void testRemoveFriendNotFriends() {
+        Cat friend = new Cat();
+        friend.setId(2L);
+        when(catDao.findById(1L)).thenReturn(Optional.of(cat));
+        when(catDao.findById(2L)).thenReturn(Optional.of(friend));
+        assertThrows(IllegalArgumentException.class, () -> catService.removeFriend(1L, 2L));
     }
 }

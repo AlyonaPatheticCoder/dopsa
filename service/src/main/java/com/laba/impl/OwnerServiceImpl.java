@@ -1,181 +1,214 @@
 package com.laba.impl;
 
-import com.laba.DaoException;
-import com.laba.ServiceException;
+import com.laba.dao.CatDao;
 import com.laba.dao.OwnerDao;
+import com.laba.dto.OwnerDto;
 import com.laba.entity.Cat;
 import com.laba.entity.Owner;
 import com.laba.service.OwnerService;
+import com.laba.validation.Validation;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDate;
 import java.util.List;
 
 /**
  * The Implementation of OwnerService.
  */
+@Service
 public class OwnerServiceImpl implements OwnerService {
-
     private final OwnerDao ownerDao;
+    private final CatDao catDao;
+    private final Validation validation;
+    private final int maxOwnerNameLength;
+    private final int maxCatNameLength;
 
-    /**
-     * Constructor of CatDao.
-     *
-     * @param ownerDao OwnerDao object, must not be null
-     * @throws IllegalArgumentException - if either parameter is null
-     */
-    public OwnerServiceImpl(OwnerDao ownerDao) {
+    @Autowired
+    public OwnerServiceImpl(OwnerDao ownerDao, CatDao catDao) {
         this.ownerDao = ownerDao;
+        this.catDao = catDao;
+        this.validation = new Validation();
+        this.maxOwnerNameLength = validation.getOwner().getNameMaxLength();
+        this.maxCatNameLength = validation.getCat().getNameMaxLength();
     }
 
     @Override
-    public void saveOwner(Owner owner) {
+    public OwnerDto getOwnerById(Long id) {
+        if (id == null) throw new IllegalArgumentException("Owner id can't be null");
+        return ownerDao.findById(id)
+                .map(OwnerDto::fromEntity)
+                .orElseThrow(() -> new IllegalArgumentException("Owner not found"));
+    }
+
+    @Override
+    public List<OwnerDto> getAllOwners() {
+            return ownerDao.findAll().stream()
+                    .map(OwnerDto::fromEntity)
+                    .toList();
+    }
+
+    @Override
+    public List<OwnerDto> findOwnersByName(String name) {
+        validateString(name, "Owner name", maxOwnerNameLength);
+            return ownerDao.findByNameIgnoreCase(name.trim()).stream()
+                    .map(OwnerDto::fromEntity)
+                    .toList();
+    }
+
+    @Override
+    public List<OwnerDto> findOwnersByCatName(String catName) {
+        validateString(catName, "Cat name", maxCatNameLength);
+            return ownerDao.findByCats_NameIgnoreCase(catName.trim()).stream()
+                    .map(OwnerDto::fromEntity)
+                    .toList();
+    }
+
+    @Override
+    public OwnerDto findOwnerByCatId(Long catId) {
+        if (catId == null) throw new IllegalArgumentException("Cat id can't be null");
+        return ownerDao.findByCats_Id(catId)
+                .map(OwnerDto::fromEntity)
+                .orElseThrow(() -> new IllegalArgumentException("Owner not found"));
+    }
+
+
+    @Override
+    public List<OwnerDto> findOwnersByFilter(OwnerDto filter) {
+        if (filter == null) return getAllOwners();
+        Specification<Owner> spec = Specification.where(null);
+
+        if (filter.getId() != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("id"), filter.getId()));
+        }
+
+        if (filter.getName() != null && !filter.getName().isBlank()) {
+            spec = spec.and((root, query, cb) ->
+                    cb.like(cb.lower(root.get("name")),
+                            "%" + filter.getName().toLowerCase().trim() + "%"));
+        }
+
+        if (filter.getBirthday() != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("birthday"), filter.getBirthday()));
+        }
+
+        if (filter.getCatIds() != null && !filter.getCatIds().isEmpty()) {
+            spec = spec.and((root, query, cb) ->
+                    root.join("cats").get("id").in(filter.getCatIds()));
+        }
+
+        if (filter.getCatNames() != null && !filter.getCatNames().isEmpty()) {
+            spec = spec.and((root, query, cb) ->
+                    cb.or(filter.getCatNames().stream()
+                            .map(name -> cb.like(
+                                    cb.lower(root.join("cats").get("name")),
+                                    "%" + name.toLowerCase().trim() + "%"))
+                            .toArray(jakarta.persistence.criteria.Predicate[]::new)));
+        }
+
+        return ownerDao.findAll(spec).stream()
+                .map(OwnerDto::fromEntity)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public void saveOwner(OwnerDto ownerDto) {
+        if (ownerDto == null) throw new IllegalArgumentException("Owner can't be null");
+        Owner owner = ownerDto.toEntity();
         checkOwner(owner, true);
-        try {
-            ownerDao.save(owner);
-        } catch (DaoException e) {
-            System.err.println("DAO error in saveOwner: " + e.getMessage());
-            throw new ServiceException("Failed to save owner", e);
-        }
+        ownerDao.save(owner);
     }
 
     @Override
-    public void updateOwner(Owner owner) {
+    @Transactional
+    public void updateOwner(OwnerDto ownerDto) {
+        if (ownerDto == null) throw new IllegalArgumentException("Owner can't be null");
+        Owner owner = ownerDto.toEntity();
         checkOwner(owner, false);
-        Owner existing = ownerDao.findById(owner.getId());
-        if (existing != null && existing.isSame(owner)) {
-            return;
-        }
-        try {
-            ownerDao.update(owner);
-        } catch (DaoException e) {
-            System.err.println("DAO error in updateOwner: " + e.getMessage());
-            throw new ServiceException("Failed to update owner", e);
-        }
+        ownerDao.save(owner);
     }
 
     @Override
-    public void deleteOwner(Owner owner) {
-        if (owner == null || owner.getId() == null) {
-            throw new IllegalArgumentException("Owner or its id can't be null");
-        }
+    @Transactional
+    public void deleteOwner(Long ownerId) {
+        if (ownerId == null) throw new IllegalArgumentException("Owner id can't be null");
+        Owner owner = ownerDao.findById(ownerId)
+                .orElseThrow(() -> new IllegalArgumentException("Owner not found"));
 
-        Owner persistentOwner;
-        try {
-            persistentOwner = ownerDao.findById(owner.getId());
-        } catch (DaoException e) {
-            System.err.println("DAO error in findById (deleteOwner): " + e.getMessage());
-            throw new ServiceException("Failed to find owner by id", e);
-        }
-
-        if (persistentOwner == null) {
-            throw new IllegalArgumentException("Owner does not exist");
-        }
-
-        if (persistentOwner.getCats() != null && !persistentOwner.getCats().isEmpty()) {
+        if (owner.getCats() != null && !owner.getCats().isEmpty()) {
             throw new IllegalStateException("Can't delete owner with existing cats");
         }
-
-        try {
-            ownerDao.delete(owner);
-        } catch (DaoException e) {
-            System.err.println("DAO error in deleteOwner: " + e.getMessage());
-            throw new ServiceException("Failed to delete owner", e);
-        }
+        ownerDao.delete(owner);
     }
 
+    @Transactional
     @Override
-    public Owner getOwnerById(Long id) {
-        if (id == null) throw new IllegalArgumentException("Owner id can't be null");
-        try {
-            return ownerDao.findById(id);
-        } catch (DaoException e) {
-            System.err.println("DAO error in getOwnerById: " + e.getMessage());
-            throw new ServiceException("Failed to find owner by id", e);
+    public void addCatToOwner(Long ownerId, Long catId) {
+        Owner owner = ownerDao.findById(ownerId)
+                .orElseThrow(() -> new IllegalArgumentException("Owner not found"));
+        Cat cat = catDao.findById(catId)
+                .orElseThrow(() -> new IllegalArgumentException("Cat not found"));
+
+        if (cat.getOwner() != null && !cat.getOwner().getId().equals(ownerId)) {
+            throw new IllegalStateException("Cat already has another owner");
         }
+
+        cat.setOwner(owner);
+        owner.getCats().add(cat);
+
+        catDao.save(cat);
+        ownerDao.save(owner);
     }
 
+    @Transactional
     @Override
-    public List<Owner> getAllOwners() {
-        try {
-            return ownerDao.findAll();
-        } catch (DaoException e) {
-            System.err.println("DAO error in getAllOwners: " + e.getMessage());
-            throw new ServiceException("Failed to get all owners", e);
+    public void removeCatFromOwner(Long ownerId, Long catId) {
+        Owner owner = ownerDao.findById(ownerId)
+                .orElseThrow(() -> new IllegalArgumentException("Owner not found"));
+        Cat cat = catDao.findById(catId)
+                .orElseThrow(() -> new IllegalArgumentException("Cat not found"));
+
+        if (!owner.getCats().contains(cat)) {
+            throw new IllegalArgumentException("This cat does not belong to this owner");
         }
+
+        owner.getCats().remove(cat);
+        cat.setOwner(null);
+
+        catDao.save(cat);
+        ownerDao.save(owner);
     }
 
-    @Override
-    public List<Owner> findOwnersByName(String name) {
-        if (name == null || name.isBlank()) throw new IllegalArgumentException("Name can't be null or empty");
-        try {
-            return ownerDao.findByName(name);
-        } catch (DaoException e) {
-            System.err.println("DAO error in findOwnersByName: " + e.getMessage());
-            throw new ServiceException("Failed to find owners by name", e);
-        }
-    }
 
-    @Override
-    public List<Owner> findOwnersByCatName(String catName) {
-        if (catName == null || catName.isBlank()) throw new IllegalArgumentException("Cat name can't be null or empty");
-        try {
-            return ownerDao.findByCatName(catName);
-        } catch (DaoException e) {
-            System.err.println("DAO error in findOwnersByCatName: " + e.getMessage());
-            throw new ServiceException("Failed to find owners by cat name", e);
-        }
-    }
+    /**
+     * Checks Owner
+     * @param owner owner to check
+     * @param isNew boolean
+     */
+    private void checkOwner(Owner owner, boolean isNew) {
+        if (owner == null) throw new IllegalArgumentException("Owner can't be null");
+        if (!isNew && owner.getId() == null) throw new IllegalArgumentException("Owner id can't be null");
+        validateString(owner.getName(), "Owner name", maxOwnerNameLength);
+        if (owner.getBirthday() == null || owner.getBirthday().isAfter(LocalDate.now()))
+            throw new IllegalArgumentException("Invalid birthday");
 
-    @Override
-    public Owner findOwnerByCatId(Long catId) {
-        if (catId == null) throw new IllegalArgumentException("Cat id can't be null");
-        try {
-            return ownerDao.findByCatId(catId);
-        } catch (DaoException e) {
-            System.err.println("DAO error in findOwnerByCatId: " + e.getMessage());
-            throw new ServiceException("Failed to find owner by cat id", e);
-        }
-    }
-
-    @Override
-    public List<Cat> getCatsByOwnerId(Long ownerId) {
-        if (ownerId == null) throw new IllegalArgumentException("Owner id can't be null");
-        Owner owner;
-        try {
-            owner = ownerDao.findById(ownerId);
-        } catch (DaoException e) {
-            System.err.println("DAO error in getCatsByOwnerId: " + e.getMessage());
-            throw new ServiceException("Failed to find owner by id", e);
-        }
-
-        if (owner == null) {
-            throw new IllegalArgumentException("Owner not found");
-        }
-        return owner.getCats();
     }
 
     /**
-     * Validates the owner.
-     *
-     * @param owner owner object to validate
-     * @param isNew true if the owner is new
+     * Validates input string
+     * @param value string input
+     * @param fieldName field name
+     * @param maxLength maximum length of input string
      */
-    private void checkOwner(Owner owner, boolean isNew) {
-        if (owner == null)
-            throw new IllegalArgumentException("Owner can't be null");
-
-        if (!isNew && (owner.getId() == null))
-            throw new IllegalArgumentException("Owner id can't be null");
-
-        if (owner.getName() == null || owner.getName().trim().isEmpty())
-            throw new IllegalArgumentException("Owner name can't be null or empty string");
-
-        if (owner.getBirthday() == null)
-            throw new IllegalArgumentException("Owner birthday can't be null");
-
-        if (owner.getName().length() > 30)
-            throw new IllegalArgumentException("Owner name must be under 30 characters");
-
-        if (owner.getBirthday().isAfter(LocalDate.now()))
-            throw new IllegalArgumentException("Incorrect birthday");
+    private void validateString(String value, String fieldName, int maxLength) {
+        if (value == null || value.trim().isEmpty())
+            throw new IllegalArgumentException(fieldName + " can't be null or empty");
+        if (value.length() > maxLength)
+            throw new IllegalArgumentException(fieldName + " length must be ≤ " + maxLength);
     }
 }

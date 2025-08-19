@@ -1,7 +1,6 @@
 package com.laba.service;
 
-import com.laba.entity.Cat;
-import com.laba.entity.Owner;
+import com.laba.dto.OwnerDto;
 import java.util.List;
 
 /**
@@ -10,78 +9,86 @@ import java.util.List;
 public interface OwnerService {
 
     /**
-     * Saves a new owner.
+     * Gets owner by id.
      *
-     * @param owner the owner to save, must not be null
-     * @throws IllegalArgumentException - if owner is null
+     * @param id the id
+     * @return the owner by id
      */
-    void saveOwner(Owner owner);
+    OwnerDto getOwnerById(Long id);
 
     /**
-     * Updates an existing owner.
+     * Gets all owners.
      *
-     * @param owner the owner to update, must not be null
-     * @throws IllegalArgumentException if owner is null
+     * @return the all owners
      */
-    void updateOwner(Owner owner);
+    List<OwnerDto> getAllOwners();
 
     /**
-     * Deletes an owner.
+     * Find owners by name list.
      *
-     * @param owner the owner to delete, must not be null
-     * @throws IllegalArgumentException - if owner is null
+     * @param name the name
+     * @return the list
      */
-    void deleteOwner(Owner owner);
+    List<OwnerDto> findOwnersByName(String name);
 
     /**
-     * Finds an owner by id.
+     * Find owners by cat name list.
      *
-     * @param id the owner's id, must not be null
-     * @return the owner or null if not found
-     * @throws IllegalArgumentException - if id is null
+     * @param catName the cat name
+     * @return the list
      */
-    Owner getOwnerById(Long id);
+    List<OwnerDto> findOwnersByCatName(String catName);
 
     /**
-     * Returns all owners.
+     * Find owner by cat id owner dto.
      *
-     * @return list of all owners or empty if none found
+     * @param catId the cat id
+     * @return the owner dto
      */
-    List<Owner> getAllOwners();
+    OwnerDto findOwnerByCatId(Long catId);
 
     /**
-     * Finds owners by name (case-insensitive).
+     * Find owners by filter list.
      *
-     * @param name the owner's name, must not be null
-     * @return list of matching owners or empty if none found
-     * @throws IllegalArgumentException - if name is null
+     * @param filter the filter
+     * @return the list
      */
-    List<Owner> findOwnersByName(String name);
+    List<OwnerDto> findOwnersByFilter(OwnerDto filter);
 
     /**
-     * Finds the owner of a specific cat.
+     * Update owner.
      *
-     * @param catId the cat's id, must not be null
-     * @return the owner or null if not found
-     * @throws IllegalArgumentException - if catId is null
+     * @param ownerDto the owner dto
      */
-    Owner findOwnerByCatId(Long catId);
+    void updateOwner(OwnerDto ownerDto);
 
     /**
-     * Finds owners who have cats with a specific name (case-insensitive).
+     * Delete owner.
      *
-     * @param catName the cat's name, must not be null
-     * @return list of owners or empty if none found
-     * @throws IllegalArgumentException - if catName is null
+     * @param ownerId the owner id
      */
-    List<Owner> findOwnersByCatName(String catName);
+    void deleteOwner(Long ownerId);
 
     /**
-     * Returns all cats owned by a specific owner.
+     * Save owner.
      *
-     * @param id the owner's id, must not be null
-     * @return list of cats or empty if none found
-     * @throws IllegalArgumentException - if id is null
+     * @param ownerDto the owner dto
      */
-    List<Cat> getCatsByOwnerId(Long id);
+    void saveOwner(OwnerDto ownerDto);
+
+    /**
+     * Add cat to owner.
+     *
+     * @param ownerId the owner id
+     * @param catId   the cat id
+     */
+    void addCatToOwner(Long ownerId, Long catId);
+
+    /**
+     * Remove cat from owner.
+     *
+     * @param ownerId the owner id
+     * @param catId   the cat id
+     */
+    void removeCatFromOwner(Long ownerId, Long catId);
 }

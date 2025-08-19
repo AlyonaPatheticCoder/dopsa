@@ -1,97 +1,37 @@
 package com.laba.dao;
 
-import com.laba.DaoException;
 import com.laba.entity.Cat;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import java.util.List;
 
 /**
- * DAO interface with CRUD operations on Cats.
- * */
-public interface CatDao {
+ * Cat DAO extends JpaRepository
+ */
+public interface CatDao extends JpaRepository<Cat, Long>, JpaSpecificationExecutor<Cat> {
 
     /**
-     * Saves a new cat.
+     * Find by name ignore case list.
      *
-     * @param cat a cat object - must not be null
-     * @throws IllegalArgumentException  - if cat is null
-     * @throws DaoException - if database error occurs
+     * @param name the name
+     * @return the list
      */
-    void save(Cat cat);
+    List<Cat> findByNameIgnoreCase(String name);
 
     /**
-     * Finds a cat by id.
+     * Find by owner name ignore case list.
      *
-     * @param id the id of the cat - must not be null
-     * @return Cat or null if not found
-     * @throws IllegalArgumentException - if id is null
-     * @throws DaoException - if database error occurs
+     * @param ownerName the owner name
+     * @return the list
      */
-    Cat findById(Long id);
+    List<Cat> findByOwner_NameIgnoreCase(String ownerName);
 
     /**
-     * Finds all cats.
+     * Find by owner id list.
      *
-     * @return a list of all cats or empty if none found
-     * @throws DaoException - if a database error occurs
+     * @param ownerId the owner id
+     * @return the list
      */
-    List<Cat> findAll();
+    List<Cat> findByOwner_Id(Long ownerId);
 
-    /**
-     * Finds cats by name, case-insensitive.
-     *
-     * @param name the name of a cat, must not be null
-     * @return a list of matching cats or empty if none found
-     * @throws IllegalArgumentException - if name is null
-     * @throws DaoException - if a database error occurs
-     */
-    List<Cat> findByName(String name);
-
-    /**
-     * Finds cats by their owner's name, case-insensitive.
-     *
-     * @param ownerName the owner's name, must not be null
-     * @return a list of matching cats or empty if none found
-     * @throws IllegalArgumentException - if ownerName is null
-     * @throws DaoException - if a database error occurs
-     */
-    List<Cat> findByOwnerName(String ownerName);
-
-    /**
-     * Finds cats by their owner's id.
-     *
-     * @param ownerId the owner's id, must not be null
-     * @return a list of matching cats or empty if none found
-     * @throws IllegalArgumentException - if ownerId is null
-     * @throws DaoException - if a database error occurs
-     */
-    List<Cat> findByOwnerId(Long ownerId);
-
-    /**
-     * Finds cats by cat name and owner's name, case-insensitive.
-     *
-     * @param name the cat's name, must not be null
-     * @param ownerName the owner's, must not be null
-     * @return a list of matching cats or empty if none found
-     * @throws IllegalArgumentException - if name or ownerName is null
-     * @throws DaoException - if a database error occurs
-     */
-    List<Cat> findByNameAndOwner(String name, String ownerName);
-
-    /**
-     * Updates an existing cat.
-     *
-     * @param cat a cat object, must not be null
-     * @throws IllegalArgumentException - if cat is null
-     * @throws DaoException - if a database error occurs
-     */
-    void update(Cat cat);
-
-    /**
-     * Deletes a cat.
-     *
-     * @param cat a cat object, must not be null
-     * @throws IllegalArgumentException - if cat or cat.id is null
-     * @throws DaoException - if a database error occurs or cat not found
-     */
-    void delete(Cat cat);
 }
