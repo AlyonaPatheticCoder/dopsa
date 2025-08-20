@@ -11,40 +11,38 @@ import org.springframework.core.env.Environment;
 @Component
 public class MaxLengthPropertyValidation implements ConstraintValidator<MaxLengthProperty, String> {
 
-    private final Environment env;
-    private String propertyKey;
+    private final Validation validation;
+    private String field;
     private int maxLength;
 
     /**
      * Instantiates a new Max length property validation.
      *
-     * @param env the env
+     * @param validation the validation
      */
-    public MaxLengthPropertyValidation(Environment env) {
-        this.env = env;
+    public MaxLengthPropertyValidation(Validation validation) {
+        this.validation = validation;
     }
 
-    /**
-     * Initializer
-     *
-     * @param constraintAnnotation constraintAnnotation
-     */
     @Override
     public void initialize(MaxLengthProperty constraintAnnotation) {
-        this.propertyKey = constraintAnnotation.property();
-        String maxLengthStr = env.getProperty(propertyKey);
-        if (maxLengthStr != null) {
-            this.maxLength = Integer.parseInt(maxLengthStr);
+        this.field = constraintAnnotation.property();
+
+        switch (field) {
+            case "owner-name":
+                maxLength = validation.getOwner().getName();
+                break;
+            case "cat-name":
+                maxLength = validation.getCat().getName();
+                break;
+            case "breed":
+                maxLength = validation.getCat().getBreed();
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown property: " + field);
         }
     }
 
-    /**
-     * Validates string max lenght
-     *
-     * @param value string length
-     * @param context constraint validator context
-     * @return valid boolean
-     */
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
         if (value == null) return true;

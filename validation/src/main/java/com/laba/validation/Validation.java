@@ -8,50 +8,69 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @ConfigurationProperties(prefix = "validation")
-public class Validation{
-    private final OwnerValidation ownerValidation = new OwnerValidation();
-    private final CatValidation catValidation = new CatValidation();
+public class Validation {
+
+    private OwnerValidation owner = new OwnerValidation();
+    private CatValidation cat = new CatValidation();
 
     /**
-     * Gets ownerValidation.
+     * Gets owner.
      *
-     * @return the ownerValidation
+     * @return the owner
      */
     public OwnerValidation getOwner() {
-        return ownerValidation;
+        return owner;
     }
 
     /**
-     * Gets catValidation.
+     * Sets owner.
      *
-     * @return the catValidation
+     * @param ownerValidation the owner validation
+     */
+    public void setOwner(OwnerValidation ownerValidation) {
+        this.owner = ownerValidation;
+    }
+
+    /**
+     * Gets cat.
+     *
+     * @return the cat
      */
     public CatValidation getCat() {
-        return catValidation;
+        return cat;
+    }
+
+    /**
+     * Sets cat.
+     *
+     * @param catValidation the cat validation
+     */
+    public void setCat(CatValidation catValidation) {
+        this.cat = catValidation;
     }
 
     /**
      * The type Owner validation.
      */
     public static class OwnerValidation {
-        private int nameMaxLength;
+        private int name;
 
         /**
-         * Gets name max length.
+         * Gets name.
          *
-         * @return the name max length
+         * @return the name
          */
-        public int getNameMaxLength() {
-            return nameMaxLength;
+        public int getName() {
+            return name;
         }
 
         /**
-         * Sets name max length.
+         * Sets name.
          *
-         * @param nameMaxLength the name max length
+         * @param name the name
          */
-        public void setNameMaxLength(int nameMaxLength) {
-            this.nameMaxLength = nameMaxLength;
+        public void setName(int name) {
+            this.name = name;
         }
     }
 
@@ -59,43 +78,43 @@ public class Validation{
      * The type Cat validation.
      */
     public static class CatValidation {
-        private int nameMaxLength;
-        private int breedMaxLength;
+        private int name;
+        private int breed;
 
         /**
-         * Gets name max length.
+         * Gets name.
          *
-         * @return the name max length
+         * @return the name
          */
-        public int getNameMaxLength() {
-            return nameMaxLength;
+        public int getName() {
+            return name;
         }
 
         /**
-         * Sets name max length.
+         * Sets name.
          *
-         * @param nameMaxLength the name max length
+         * @param name the name
          */
-        public void setNameMaxLength(int nameMaxLength) {
-            this.nameMaxLength = nameMaxLength;
+        public void setName(int name) {
+            this.name = name;
         }
 
         /**
-         * Gets breed max length.
+         * Gets breed.
          *
-         * @return the breed max length
+         * @return the breed
          */
-        public int getBreedMaxLength() {
-            return breedMaxLength;
+        public int getBreed() {
+            return breed;
         }
 
         /**
-         * Sets breed max length.
+         * Sets breed.
          *
-         * @param breedMaxLength the breed max length
+         * @param breed the breed
          */
-        public void setBreedMaxLength(int breedMaxLength) {
-            this.breedMaxLength = breedMaxLength;
+        public void setBreed(int breed) {
+            this.breed = breed;
         }
     }
 }

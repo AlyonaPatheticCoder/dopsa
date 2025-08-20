@@ -41,7 +41,6 @@ class OwnerServiceImplTest {
     @Mock
     private CatDao catDao;
 
-    @InjectMocks
     private OwnerServiceImpl ownerService;
 
     private Owner owner;
@@ -67,8 +66,11 @@ class OwnerServiceImplTest {
         cat.setBreed("B");
         cat.setColor(Color.BLACK);
 
-        ReflectionTestUtils.setField(ownerService, "maxOwnerNameLength", 50);
-        ReflectionTestUtils.setField(ownerService, "maxCatNameLength", 50);
+        validation = new Validation();
+        validation.getOwner().setName(50);
+        validation.getCat().setName(50);
+        validation.getCat().setBreed(50);
+        ownerService = new OwnerServiceImpl(ownerDao, catDao, validation);
     }
 
     /**

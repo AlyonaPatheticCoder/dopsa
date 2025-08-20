@@ -2,11 +2,13 @@ package com.laba;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 /**
  * Cat-Owner managing service.
  */
 @SpringBootApplication
+@ConfigurationPropertiesScan
 public class Main {
     /**
      * The entry point of application.

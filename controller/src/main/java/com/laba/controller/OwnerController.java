@@ -66,7 +66,7 @@ public class OwnerController {
     @GetMapping("/search/by-name")
     public ResponseEntity<List<OwnerDto>> findOwnersByName(
             @RequestParam @NotBlank @MaxLengthProperty(
-                    property = "validation.max-length.Owner-name",
+                    property = "owner-name",
                     message = "Owner name must not exceed {max} characters"
             ) String name) {
         return ResponseEntity.ok(ownerService.findOwnersByName(name));
@@ -81,7 +81,7 @@ public class OwnerController {
     @GetMapping("/search/by-cat-name")
     public ResponseEntity<List<OwnerDto>> findOwnersByCatName(
             @RequestParam("catName") @NotBlank @MaxLengthProperty(
-                    property = "validation.max-length.cat-name",
+                    property = "cat-name",
                     message = "Cat name must not exceed {max} characters"
             ) String catName) {
         return ResponseEntity.ok(ownerService.findOwnersByCatName(catName));

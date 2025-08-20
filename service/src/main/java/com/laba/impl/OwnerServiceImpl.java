@@ -7,6 +7,7 @@ import com.laba.entity.Cat;
 import com.laba.entity.Owner;
 import com.laba.service.OwnerService;
 import com.laba.validation.Validation;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -27,57 +28,72 @@ public class OwnerServiceImpl implements OwnerService {
     private final int maxCatNameLength;
 
     @Autowired
-    public OwnerServiceImpl(OwnerDao ownerDao, CatDao catDao) {
+    public OwnerServiceImpl(OwnerDao ownerDao, CatDao catDao, Validation validation) {
         this.ownerDao = ownerDao;
         this.catDao = catDao;
-        this.validation = new Validation();
-        this.maxOwnerNameLength = validation.getOwner().getNameMaxLength();
-        this.maxCatNameLength = validation.getCat().getNameMaxLength();
+        this.validation = validation;
+        this.maxOwnerNameLength = validation.getOwner().getName();
+        this.maxCatNameLength = validation.getCat().getName();
     }
 
+    @Transactional
     @Override
     public OwnerDto getOwnerById(Long id) {
         if (id == null) throw new IllegalArgumentException("Owner id can't be null");
-        return ownerDao.findById(id)
-                .map(OwnerDto::fromEntity)
+        Owner owner = ownerDao.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Owner not found"));
+        Hibernate.initialize(owner.getCats());
+        return OwnerDto.fromEntity(owner);
     }
 
+    @Transactional
     @Override
     public List<OwnerDto> getAllOwners() {
-            return ownerDao.findAll().stream()
-                    .map(OwnerDto::fromEntity)
-                    .toList();
+        List<Owner> owners = ownerDao.findAll();
+        owners.forEach(owner -> Hibernate.initialize(owner.getCats()));
+        return owners.stream()
+                .map(OwnerDto::fromEntity)
+                .toList();
     }
 
+    @Transactional
     @Override
     public List<OwnerDto> findOwnersByName(String name) {
         validateString(name, "Owner name", maxOwnerNameLength);
-            return ownerDao.findByNameIgnoreCase(name.trim()).stream()
-                    .map(OwnerDto::fromEntity)
-                    .toList();
+        List<Owner> owners = ownerDao.findByNameIgnoreCase(name.trim());
+        owners.forEach(owner -> Hibernate.initialize(owner.getCats()));
+        return owners.stream()
+                .map(OwnerDto::fromEntity)
+                .toList();
     }
 
+    @Transactional
     @Override
     public List<OwnerDto> findOwnersByCatName(String catName) {
         validateString(catName, "Cat name", maxCatNameLength);
-            return ownerDao.findByCats_NameIgnoreCase(catName.trim()).stream()
-                    .map(OwnerDto::fromEntity)
-                    .toList();
+        List<Owner> owners = ownerDao.findByCats_NameIgnoreCase(catName.trim());
+        owners.forEach(owner -> Hibernate.initialize(owner.getCats()));
+        return owners.stream()
+                .map(OwnerDto::fromEntity)
+                .toList();
     }
 
+    @Transactional
     @Override
     public OwnerDto findOwnerByCatId(Long catId) {
         if (catId == null) throw new IllegalArgumentException("Cat id can't be null");
-        return ownerDao.findByCats_Id(catId)
-                .map(OwnerDto::fromEntity)
+        Owner owner = ownerDao.findByCats_Id(catId)
                 .orElseThrow(() -> new IllegalArgumentException("Owner not found"));
+        Hibernate.initialize(owner.getCats());
+        return OwnerDto.fromEntity(owner);
     }
 
 
+    @Transactional
     @Override
     public List<OwnerDto> findOwnersByFilter(OwnerDto filter) {
         if (filter == null) return getAllOwners();
+
         Specification<Owner> spec = Specification.where(null);
 
         if (filter.getId() != null) {
@@ -110,7 +126,10 @@ public class OwnerServiceImpl implements OwnerService {
                             .toArray(jakarta.persistence.criteria.Predicate[]::new)));
         }
 
-        return ownerDao.findAll(spec).stream()
+        List<Owner> owners = ownerDao.findAll(spec);
+        owners.forEach(owner -> Hibernate.initialize(owner.getCats()));
+
+        return owners.stream()
                 .map(OwnerDto::fromEntity)
                 .toList();
     }
@@ -211,4 +230,20 @@ public class OwnerServiceImpl implements OwnerService {
         if (value.length() > maxLength)
             throw new IllegalArgumentException(fieldName + " length must be ≤ " + maxLength);
     }
+
+//    private void initializeOwner(Owner owner) {
+//        if (owner.getCats() != null) {
+//            owner.getCats().forEach(this::initializeCat);
+//        }
+//    }
+//
+//    private void initializeCat(Cat cat) {
+//        if (cat.getOwner() != null) {
+//            cat.getOwner().getId();
+//            cat.getOwner().getName();
+//        }
+//        if (cat.getFriends() != null) {
+//            cat.getFriends().size();
+//        }
+//    }
 }

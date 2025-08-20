@@ -6,6 +6,7 @@ import com.laba.dto.CatDto;
 import com.laba.entity.Cat;
 import com.laba.entity.Color;
 import com.laba.entity.Owner;
+import com.laba.validation.Validation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,12 +32,12 @@ class CatServiceImplTest {
     private CatDao catDao;
     @Mock
     private OwnerDao ownerDao;
-    @InjectMocks
     private CatServiceImpl catService;
 
     private Cat cat;
     private CatDto catDto;
     private Owner owner;
+    private Validation validation;
 
     /**
      * Sets up.
@@ -57,9 +58,11 @@ class CatServiceImplTest {
         cat.setFriends(new ArrayList<>());
         catDto = CatDto.fromEntity(cat);
 
-        ReflectionTestUtils.setField(catService, "maxOwnerNameLength", 50);
-        ReflectionTestUtils.setField(catService, "maxCatNameLength", 50);
-        ReflectionTestUtils.setField(catService, "maxCatBreedLength", 50);
+        validation = new Validation();
+        validation.getOwner().setName(50);
+        validation.getCat().setName(50);
+        validation.getCat().setBreed(50);
+        catService = new CatServiceImpl(catDao, ownerDao, validation);
     }
 
     /**
@@ -79,8 +82,13 @@ class CatServiceImplTest {
     @Test
     void testGetCatByIdNotFound() {
         when(catDao.findById(2L)).thenReturn(Optional.empty());
-        CatDto result = catService.getCatById(2L);
-        assertNull(result);
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> catService.getCatById(2L)
+        );
+
+        assertEquals("Cat not found", exception.getMessage());
     }
 
     /**
