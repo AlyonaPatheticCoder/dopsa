@@ -14,6 +14,7 @@ dependencies {
     implementation(project(":dao"))
     implementation(project(":entity"))
     implementation(project(":dto"))
+    implementation(project(":Config"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")

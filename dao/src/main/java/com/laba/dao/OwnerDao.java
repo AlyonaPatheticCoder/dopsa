@@ -3,6 +3,9 @@ package com.laba.dao;
 import com.laba.entity.Owner;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -34,5 +37,11 @@ public interface OwnerDao extends JpaRepository<Owner, Long>, JpaSpecificationEx
      * @return the optional
      */
     Optional<Owner> findByCats_Id(Long catId);
+
+    @Query("SELECT o FROM Owner o LEFT JOIN FETCH o.cats")
+    List<Owner> findAllWithCats();
+
+    @Query("SELECT o FROM Owner o LEFT JOIN FETCH o.cats WHERE o.id = :id")
+    Optional<Owner> findByIdWithCats(@Param("id") Long id);
 
 }

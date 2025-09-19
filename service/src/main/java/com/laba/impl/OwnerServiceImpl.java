@@ -5,15 +5,22 @@ import com.laba.dao.OwnerDao;
 import com.laba.dto.OwnerDto;
 import com.laba.entity.Cat;
 import com.laba.entity.Owner;
+import com.laba.entity.Role;
+import com.laba.entity.User;
 import com.laba.service.OwnerService;
 import com.laba.validation.Validation;
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -36,21 +43,89 @@ public class OwnerServiceImpl implements OwnerService {
         this.maxCatNameLength = validation.getCat().getName();
     }
 
+    private User getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
+            throw new AccessDeniedException("User is not authenticated");
+        }
+        return ((UserDetailsImpl) auth.getPrincipal()).getUser();
+    }
+
+    private void checkOwnerAccess(Long ownerId) {
+        User currentUser = getCurrentUser();
+        if (currentUser.getRole() == Role.ADMIN) return;
+        if (currentUser.getOwner() == null || !currentUser.getOwner().getId().equals(ownerId)) {
+            throw new AccessDeniedException("You don't have access to this owner's data");
+        }
+    }
+
     @Transactional
     @Override
     public OwnerDto getOwnerById(Long id) {
         if (id == null) throw new IllegalArgumentException("Owner id can't be null");
-        Owner owner = ownerDao.findById(id)
+        Owner owner = ownerDao.findByIdWithCats(id)
                 .orElseThrow(() -> new IllegalArgumentException("Owner not found"));
         Hibernate.initialize(owner.getCats());
+        checkOwnerAccess(owner.getId());
         return OwnerDto.fromEntity(owner);
     }
 
     @Transactional
     @Override
     public List<OwnerDto> getAllOwners() {
-        List<Owner> owners = ownerDao.findAll();
-        owners.forEach(owner -> Hibernate.initialize(owner.getCats()));
+        User currentUser = getCurrentUser();
+        List<Owner> owners;
+
+        if (currentUser.getRole() == Role.ADMIN) {
+            owners = ownerDao.findAllWithCats();
+        } else {
+            owners = ownerDao.findByIdWithCats(currentUser.getOwner().getId())
+                    .map(List::of)
+                    .orElse(Collections.emptyList());
+        }
+
+        return owners.stream()
+                .map(OwnerDto::fromEntity)
+                .toList();
+    }
+
+
+    @Transactional
+    @Override
+    public List<OwnerDto> findOwnersByFilter(OwnerDto filter) {
+        Specification<Owner> spec = Specification.where(null);
+
+        if (filter != null) {
+            if (filter.getId() != null) {
+                spec = spec.and((root, query, cb) -> cb.equal(root.get("id"), filter.getId()));
+            }
+            if (filter.getName() != null && !filter.getName().isBlank()) {
+                spec = spec.and((root, query, cb) ->
+                        cb.like(cb.lower(root.get("name")), "%" + filter.getName().toLowerCase().trim() + "%"));
+            }
+            if (filter.getBirthday() != null) {
+                spec = spec.and((root, query, cb) -> cb.equal(root.get("birthday"), filter.getBirthday()));
+            }
+            if (filter.getCatIds() != null && !filter.getCatIds().isEmpty()) {
+                spec = spec.and((root, query, cb) -> root.join("cats").get("id").in(filter.getCatIds()));
+            }
+            if (filter.getCatNames() != null && !filter.getCatNames().isEmpty()) {
+                spec = spec.and((root, query, cb) -> cb.or(filter.getCatNames().stream()
+                        .map(name -> cb.like(cb.lower(root.join("cats").get("name")), "%" + name.toLowerCase().trim() + "%"))
+                        .toArray(jakarta.persistence.criteria.Predicate[]::new)));
+            }
+        }
+
+        List<Owner> owners = ownerDao.findAll(spec);
+        User currentUser = getCurrentUser();
+        if (currentUser.getRole() != Role.ADMIN) {
+            Owner owner = currentUser.getOwner();
+            owners = owners.stream()
+                    .filter(o -> owner != null && o.getId().equals(owner.getId()))
+                    .toList();
+        }
+
+        owners.forEach(o -> Hibernate.initialize(o.getCats()));
         return owners.stream()
                 .map(OwnerDto::fromEntity)
                 .toList();
@@ -63,7 +138,10 @@ public class OwnerServiceImpl implements OwnerService {
         List<Owner> owners = ownerDao.findByNameIgnoreCase(name.trim());
         owners.forEach(owner -> Hibernate.initialize(owner.getCats()));
         return owners.stream()
-                .map(OwnerDto::fromEntity)
+                .map(owner -> {
+                    checkOwnerAccess(owner.getId());
+                    return OwnerDto.fromEntity(owner);
+                })
                 .toList();
     }
 
@@ -74,7 +152,10 @@ public class OwnerServiceImpl implements OwnerService {
         List<Owner> owners = ownerDao.findByCats_NameIgnoreCase(catName.trim());
         owners.forEach(owner -> Hibernate.initialize(owner.getCats()));
         return owners.stream()
-                .map(OwnerDto::fromEntity)
+                .map(owner -> {
+                    checkOwnerAccess(owner.getId());
+                    return OwnerDto.fromEntity(owner);
+                })
                 .toList();
     }
 
@@ -85,53 +166,8 @@ public class OwnerServiceImpl implements OwnerService {
         Owner owner = ownerDao.findByCats_Id(catId)
                 .orElseThrow(() -> new IllegalArgumentException("Owner not found"));
         Hibernate.initialize(owner.getCats());
+        checkOwnerAccess(owner.getId());
         return OwnerDto.fromEntity(owner);
-    }
-
-
-    @Transactional
-    @Override
-    public List<OwnerDto> findOwnersByFilter(OwnerDto filter) {
-        if (filter == null) return getAllOwners();
-
-        Specification<Owner> spec = Specification.where(null);
-
-        if (filter.getId() != null) {
-            spec = spec.and((root, query, cb) ->
-                    cb.equal(root.get("id"), filter.getId()));
-        }
-
-        if (filter.getName() != null && !filter.getName().isBlank()) {
-            spec = spec.and((root, query, cb) ->
-                    cb.like(cb.lower(root.get("name")),
-                            "%" + filter.getName().toLowerCase().trim() + "%"));
-        }
-
-        if (filter.getBirthday() != null) {
-            spec = spec.and((root, query, cb) ->
-                    cb.equal(root.get("birthday"), filter.getBirthday()));
-        }
-
-        if (filter.getCatIds() != null && !filter.getCatIds().isEmpty()) {
-            spec = spec.and((root, query, cb) ->
-                    root.join("cats").get("id").in(filter.getCatIds()));
-        }
-
-        if (filter.getCatNames() != null && !filter.getCatNames().isEmpty()) {
-            spec = spec.and((root, query, cb) ->
-                    cb.or(filter.getCatNames().stream()
-                            .map(name -> cb.like(
-                                    cb.lower(root.join("cats").get("name")),
-                                    "%" + name.toLowerCase().trim() + "%"))
-                            .toArray(jakarta.persistence.criteria.Predicate[]::new)));
-        }
-
-        List<Owner> owners = ownerDao.findAll(spec);
-        owners.forEach(owner -> Hibernate.initialize(owner.getCats()));
-
-        return owners.stream()
-                .map(OwnerDto::fromEntity)
-                .toList();
     }
 
     @Override
@@ -203,7 +239,6 @@ public class OwnerServiceImpl implements OwnerService {
         ownerDao.save(owner);
     }
 
-
     /**
      * Checks Owner
      * @param owner owner to check
@@ -230,20 +265,4 @@ public class OwnerServiceImpl implements OwnerService {
         if (value.length() > maxLength)
             throw new IllegalArgumentException(fieldName + " length must be ≤ " + maxLength);
     }
-
-//    private void initializeOwner(Owner owner) {
-//        if (owner.getCats() != null) {
-//            owner.getCats().forEach(this::initializeCat);
-//        }
-//    }
-//
-//    private void initializeCat(Cat cat) {
-//        if (cat.getOwner() != null) {
-//            cat.getOwner().getId();
-//            cat.getOwner().getName();
-//        }
-//        if (cat.getFriends() != null) {
-//            cat.getFriends().size();
-//        }
-//    }
 }

@@ -1,7 +1,9 @@
 package com.laba.controller;
 
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -77,5 +79,17 @@ public class ControllerExceptionHandler {
                         LinkedHashMap::new
                 ));
         return ResponseEntity.badRequest().body(errors);
+    }
+
+    /**
+     * Handle access denied exceptions.
+     *
+     * @param ex the exception
+     * @return the response entity
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<String> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body("Access denied: " + ex.getMessage());
     }
 }
