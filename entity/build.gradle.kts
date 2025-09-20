@@ -1,11 +1,5 @@
-plugins {
-    id("java-library")
-    id("io.spring.dependency-management")
-}
 
 dependencies {
     implementation("jakarta.persistence:jakarta.persistence-api")
-    //implementation(project(":dto"))
-//    compileOnly("org.projectlombok:lombok")
-//    annotationProcessor("org.projectlombok:lombok")
+    implementation("org.hibernate.orm:hibernate-core:6.5.2.Final")
 }

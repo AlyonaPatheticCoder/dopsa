@@ -1,4 +1,8 @@
 rootProject.name = "java_dops"
-include("app", "dao", "service", "controller", "entity", "dto", "Config")
-include("main")
 include("validation")
+include("entity")
+include("entityDto")
+include("external-api")
+include("cats-service")
+include("owners-service")
+include("amqp")
