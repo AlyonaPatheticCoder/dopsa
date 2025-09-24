@@ -1,5 +1,9 @@
 package com.laba.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.laba.dto.OwnerDto;
 import com.laba.dto.OwnerRequest;
 import com.laba.dto.OwnerResponse;
@@ -12,12 +16,14 @@ import java.util.List;
 public class OwnerClient {
 
     private final RabbitTemplate rabbitTemplate;
-
-    private static final String EXCHANGE = "";
+    private final ObjectMapper objectMapper;
     private static final String QUEUE = "owners-queue";
 
     public OwnerClient(RabbitTemplate rabbitTemplate) {
         this.rabbitTemplate = rabbitTemplate;
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.registerModule(new JavaTimeModule());
+        this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
     private OwnerResponse sendRequest(OwnerRequest request) {
@@ -28,27 +34,31 @@ public class OwnerClient {
         OwnerRequest request = new OwnerRequest();
         request.setAction("GET_BY_ID");
         request.setId(id);
-        return (OwnerDto) sendRequest(request).getData();
+        Object data = sendRequest(request).getData();
+        return objectMapper.convertValue(data, OwnerDto.class);
     }
 
     public List<OwnerDto> getAllOwners() {
         OwnerRequest request = new OwnerRequest();
         request.setAction("GET_ALL");
-        return (List<OwnerDto>) sendRequest(request).getData();
+        Object data = sendRequest(request).getData();
+        return objectMapper.convertValue(data, new TypeReference<List<OwnerDto>>() {});
     }
 
     public OwnerDto saveOwner(OwnerDto ownerDto) {
         OwnerRequest request = new OwnerRequest();
         request.setAction("SAVE");
         request.setOwnerDto(ownerDto);
-        return (OwnerDto) sendRequest(request).getData();
+        Object data = sendRequest(request).getData();
+        return objectMapper.convertValue(data, OwnerDto.class);
     }
 
-    public void updateOwner(OwnerDto ownerDto) {
+    public OwnerDto updateOwner(OwnerDto ownerDto) {
         OwnerRequest request = new OwnerRequest();
         request.setAction("UPDATE");
         request.setOwnerDto(ownerDto);
-        sendRequest(request);
+        Object data = sendRequest(request).getData();
+        return objectMapper.convertValue(data, OwnerDto.class);
     }
 
     public void deleteOwner(Long id) {
@@ -64,21 +74,24 @@ public class OwnerClient {
         OwnerDto ownerDto = new OwnerDto();
         ownerDto.setName(name);
         request.setOwnerDto(ownerDto);
-        return (List<OwnerDto>) sendRequest(request).getData();
+        Object data = sendRequest(request).getData();
+        return objectMapper.convertValue(data, new TypeReference<List<OwnerDto>>() {});
     }
 
     public OwnerDto findOwnerByCatId(Long catId) {
         OwnerRequest request = new OwnerRequest();
         request.setAction("FIND_BY_CAT_ID");
         request.setCatId(catId);
-        return (OwnerDto) sendRequest(request).getData();
+        Object data = sendRequest(request).getData();
+        return objectMapper.convertValue(data, OwnerDto.class);
     }
 
     public List<OwnerDto> findOwnersByFilter(OwnerDto filter) {
         OwnerRequest request = new OwnerRequest();
         request.setAction("FIND_BY_FILTER");
         request.setOwnerDto(filter);
-        return (List<OwnerDto>) sendRequest(request).getData();
+        Object data = sendRequest(request).getData();
+        return objectMapper.convertValue(data, new TypeReference<List<OwnerDto>>() {});
     }
 
     public void addCatToOwner(Long ownerId, Long catId) {
