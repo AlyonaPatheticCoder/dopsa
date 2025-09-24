@@ -38,6 +38,8 @@ public class MaxLengthPropertyValidation implements ConstraintValidator<MaxLengt
             case "breed":
                 maxLength = validation.getCat().getBreed();
                 break;
+            case "username":
+                maxLength = validation.getUser().getUsername();
             default:
                 throw new IllegalArgumentException("Unknown property: " + field);
         }

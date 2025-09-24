@@ -17,10 +17,7 @@ public class OwnerDto {
     private Long id;
 
     @NotBlank(message = "Owner name must not be blank")
-    @MaxLengthProperty(
-            property = "validation.max-length.owner-name",
-            message = "Owner name must not exceed {max} characters"
-    )
+    @Size(min=1, max=10)
     private String name;
 
     @NotNull(message = "Birthday is required")

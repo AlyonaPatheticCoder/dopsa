@@ -60,7 +60,7 @@ public interface CatService {
      *
      * @param catDto the cat dto
      */
-    void updateCat(CatDto catDto);
+    CatDto updateCat(CatDto catDto);
 
     /**
      * Delete cat.
@@ -74,7 +74,7 @@ public interface CatService {
      *
      * @param catDto the cat dto
      */
-    void saveCat(CatDto catDto);
+    CatDto saveCat(CatDto catDto);
 
     /**
      * Add friend.

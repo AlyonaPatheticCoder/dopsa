@@ -45,12 +45,12 @@ public class CatListener {
                     return success(cats);
                 }
                 case "SAVE" -> {
-                    catService.saveCat(request.getCatDto());
-                    return success("Cat saved");
+                    CatDto saved = catService.saveCat(request.getCatDto());
+                    return success(saved);
                 }
                 case "UPDATE" -> {
-                    catService.updateCat(request.getCatDto());
-                    return success("Cat updated");
+                    CatDto updated = catService.updateCat(request.getCatDto());
+                    return success(updated);
                 }
                 case "DELETE" -> {
                     catService.deleteCat(request.getId());

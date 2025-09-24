@@ -12,3 +12,7 @@ dependencies {
     implementation(project(":amqp"))
     implementation(project(":validation"))
 }
+
+tasks.test {
+    useJUnitPlatform()
+}

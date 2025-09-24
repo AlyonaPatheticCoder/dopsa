@@ -21,7 +21,6 @@ import java.util.Objects;
  * CatService implementation
  */
 @Service
-@Transactional
 public class CatServiceImpl implements CatService {
 
     private final CatDao catDao;
@@ -29,7 +28,6 @@ public class CatServiceImpl implements CatService {
     private final int maxCatNameLength;
     private final int maxCatBreedLength;
 
-    @Autowired
     public CatServiceImpl(CatDao catDao, Validation validation) {
         this.catDao = catDao;
         this.validation = validation;
@@ -38,6 +36,7 @@ public class CatServiceImpl implements CatService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CatDto getCatById(Long id) {
         if (id == null) throw new IllegalArgumentException("Cat id can't be null");
         Cat cat = catDao.findById(id)
@@ -48,6 +47,7 @@ public class CatServiceImpl implements CatService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CatDto> getAllCats() {
         List<Cat> cats = catDao.findAll();
         cats.forEach(cat -> {
@@ -58,6 +58,7 @@ public class CatServiceImpl implements CatService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CatDto> findCatsByName(String name) {
         validateString(name, "Cat name", maxCatNameLength);
         List<Cat> cats = catDao.findByNameIgnoreCase(name.trim());
@@ -69,6 +70,7 @@ public class CatServiceImpl implements CatService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CatDto> findCatsByOwnerName(String ownerName) {
         validateString(ownerName, "Owner name", validation.getOwner().getName());
         List<Cat> cats = catDao.findByOwner_NameIgnoreCase(ownerName.trim());
@@ -80,6 +82,7 @@ public class CatServiceImpl implements CatService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CatDto> findCatsByOwnerId(Long ownerId) {
         if (ownerId == null) throw new IllegalArgumentException("Owner id can't be null");
         List<Cat> cats = catDao.findByOwner_Id(ownerId);
@@ -91,6 +94,7 @@ public class CatServiceImpl implements CatService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CatDto> findCatsByFilter(CatDto filter) {
         Specification<Cat> spec = Specification.where(null);
 
@@ -123,22 +127,27 @@ public class CatServiceImpl implements CatService {
     }
 
     @Override
-    public void saveCat(CatDto catDto) {
+    @Transactional
+    public CatDto saveCat(CatDto catDto) {
         if (catDto == null) throw new IllegalArgumentException("Cat can't be null");
         Cat cat = catDto.toEntity();
         checkCat(cat, true);
-        catDao.save(cat);
+        Cat savedCat = catDao.save(cat);
+        return CatDto.fromEntity(savedCat);
     }
 
     @Override
-    public void updateCat(CatDto catDto) {
+    @Transactional
+    public CatDto updateCat(CatDto catDto) {
         if (catDto == null) throw new IllegalArgumentException("Cat can't be null");
         Cat cat = catDto.toEntity();
         checkCat(cat, false);
-        catDao.save(cat);
+        Cat updatedCat = catDao.save(cat);
+        return CatDto.fromEntity(updatedCat);
     }
 
     @Override
+    @Transactional
     public void deleteCat(Long catId) {
         if (catId == null) throw new IllegalArgumentException("Cat id can't be null");
         Cat cat = catDao.findById(catId).orElseThrow(() -> new IllegalArgumentException("Cat not found"));
@@ -146,6 +155,7 @@ public class CatServiceImpl implements CatService {
     }
 
     @Override
+    @Transactional
     public void addFriend(Long catId, Long friendId) {
         if (catId.equals(friendId)) throw new IllegalArgumentException("Cat cannot be friend with itself");
         Cat cat = catDao.findById(catId).orElseThrow(() -> new IllegalArgumentException("Cat not found"));
@@ -156,6 +166,7 @@ public class CatServiceImpl implements CatService {
     }
 
     @Override
+    @Transactional
     public void removeFriend(Long catId, Long friendId) {
         Cat cat = catDao.findById(catId).orElseThrow(() -> new IllegalArgumentException("Cat not found"));
         Cat friend = catDao.findById(friendId).orElseThrow(() -> new IllegalArgumentException("Friend cat not found"));

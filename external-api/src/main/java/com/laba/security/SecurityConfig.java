@@ -8,7 +8,6 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractAuthenticationFilterConfigurer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,19 +23,17 @@ public class SecurityConfig {
     public SecurityConfig(UserDetailsServiceImpl userDetailsService) {
         this.userDetailsService = userDetailsService;
     }
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/users/save").permitAll()
-                        .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/users/**").hasAnyRole("ADMIN", "USER")
                         .requestMatchers("/api/v1/cats/**").hasAnyRole("ADMIN", "USER")
                         .requestMatchers("/api/v1/owners/**").hasAnyRole("ADMIN", "USER")
                         .anyRequest().authenticated()
                 )
-                .formLogin(AbstractAuthenticationFilterConfigurer::permitAll)
                 .httpBasic(Customizer.withDefaults());
         return http.build();
     }

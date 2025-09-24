@@ -8,8 +8,6 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 public class OwnerListener {
 
@@ -30,12 +28,12 @@ public class OwnerListener {
                 case "FIND_BY_NAME" -> success(ownerService.findOwnersByName(request.getOwnerDto().getName()));
                 case "FIND_BY_CAT_ID" -> success(ownerService.findOwnerByCatId(request.getCatId()));
                 case "SAVE" -> {
-                    ownerService.saveOwner(request.getOwnerDto());
-                    yield success("Owner saved");
+                    OwnerDto saved = ownerService.saveOwner(request.getOwnerDto());
+                    yield success(saved);
                 }
                 case "UPDATE" -> {
-                    ownerService.updateOwner(request.getOwnerDto());
-                    yield success("Owner updated");
+                    OwnerDto updated = ownerService.updateOwner(request.getOwnerDto());
+                    yield success(updated);
                 }
                 case "DELETE" -> {
                     ownerService.deleteOwner(request.getId());

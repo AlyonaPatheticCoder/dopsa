@@ -15,6 +15,7 @@ services:
       interval: 10s
       retries: 5
 
+
   rabbitmq:
     image: rabbitmq:3-management
     environment:
@@ -28,5 +29,8 @@ services:
       interval: 10s
       retries: 5
 
+
 volumes:
   postgres-data:
+
+

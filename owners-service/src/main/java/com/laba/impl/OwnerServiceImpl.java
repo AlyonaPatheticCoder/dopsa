@@ -1,11 +1,8 @@
 package com.laba.impl;
 import com.laba.dao.OwnerDao;
-import com.laba.dto.CatDto;
 import com.laba.dto.OwnerDto;
 import com.laba.entity.Cat;
 import com.laba.entity.Owner;
-import com.laba.entity.Role;
-import com.laba.entity.User;
 import com.laba.service.OwnerService;
 import com.laba.validation.Validation;
 import org.hibernate.Hibernate;
@@ -15,27 +12,25 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.List;
 
 /**
  * The Implementation of OwnerService.
  */
 @Service
-@Transactional
 public class OwnerServiceImpl implements OwnerService {
 
     private final OwnerDao ownerDao;
     private final Validation validation;
     private final int maxOwnerNameLength;
 
-    @Autowired
     public OwnerServiceImpl(OwnerDao ownerDao, Validation validation) {
         this.ownerDao = ownerDao;
         this.validation = validation;
         this.maxOwnerNameLength = validation.getOwner().getName();
     }
 
+    @Transactional(readOnly = true)
     @Override
     public OwnerDto getOwnerById(Long id) {
         Owner owner = ownerDao.findByIdWithCats(id)
@@ -43,12 +38,14 @@ public class OwnerServiceImpl implements OwnerService {
         return OwnerDto.fromEntity(owner);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<OwnerDto> getAllOwners() {
         List<Owner> owners = ownerDao.findAllWithCats();
         return owners.stream().map(OwnerDto::fromEntity).toList();
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<OwnerDto> findOwnersByFilter(OwnerDto filter) {
         Specification<Owner> spec = Specification.where(null);
@@ -71,6 +68,7 @@ public class OwnerServiceImpl implements OwnerService {
         return owners.stream().map(OwnerDto::fromEntity).toList();
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<OwnerDto> findOwnersByName(String name) {
         validateString(name, "Owner name", maxOwnerNameLength);
@@ -78,6 +76,7 @@ public class OwnerServiceImpl implements OwnerService {
         return owners.stream().map(OwnerDto::fromEntity).toList();
     }
 
+    @Transactional(readOnly = true)
     @Override
     public OwnerDto findOwnerByCatId(Long catId) {
         if (catId == null) throw new IllegalArgumentException("Cat id can't be null");
@@ -86,22 +85,27 @@ public class OwnerServiceImpl implements OwnerService {
         return OwnerDto.fromEntity(owner);
     }
 
+    @Transactional
     @Override
-    public void saveOwner(OwnerDto ownerDto) {
+    public OwnerDto saveOwner(OwnerDto ownerDto) {
         if (ownerDto == null) throw new IllegalArgumentException("Owner can't be null");
         Owner owner = ownerDto.toEntity();
         checkOwner(owner, true);
-        ownerDao.save(owner);
+        Owner savedOwner = ownerDao.save(owner);
+        return OwnerDto.fromEntity(savedOwner);
     }
 
+    @Transactional
     @Override
-    public void updateOwner(OwnerDto ownerDto) {
+    public OwnerDto updateOwner(OwnerDto ownerDto) {
         if (ownerDto == null) throw new IllegalArgumentException("Owner can't be null");
         Owner owner = ownerDto.toEntity();
         checkOwner(owner, false);
-        ownerDao.save(owner);
+        Owner updatedOwner = ownerDao.save(owner);
+        return OwnerDto.fromEntity(updatedOwner);
     }
 
+    @Transactional
     @Override
     public void deleteOwner(Long ownerId) {
         Owner owner = ownerDao.findByIdWithCats(ownerId)

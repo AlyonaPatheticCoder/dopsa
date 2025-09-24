@@ -1,6 +1,6 @@
 package com.laba.dto;
 
-public class OwnerResponse {
+public class UserResponse {
     private boolean success;
     private String message;
     private Object data;

@@ -17,20 +17,19 @@ public class CatDto {
     private Long id;
 
     @NotBlank(message = "Cat name must not be blank")
-    @MaxLengthProperty(
+    /*@MaxLengthProperty(
             property = "validation.max-length.cat-name",
             message = "Cat name must not exceed {max} characters"
-    )
+    )*/
+
+    @Size(min=1, max=10)
     private String name;
 
     @PastOrPresent(message = "Birthday cannot be in the future")
     private LocalDate birthday;
 
     @NotBlank(message = "Breed must not be blank")
-    @MaxLengthProperty(
-            property = "validation.max-length.breed",
-            message = "Breed must not exceed {max} characters"
-    )
+    @Size(min=1, max=10)
     private String breed;
 
     @NotNull(message = "Color must not be null")
@@ -48,7 +47,7 @@ public class CatDto {
 
         @NotBlank(message = "Friend name must not be blank")
         @MaxLengthProperty(
-                property = "validation.max-length.cat-name",
+                property = "cat-name",
                 message = "Friend must not exceed {max} characters"
         )
         private String name;

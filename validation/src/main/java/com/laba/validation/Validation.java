@@ -12,6 +12,7 @@ public class Validation {
 
     private OwnerValidation owner = new OwnerValidation();
     private CatValidation cat = new CatValidation();
+    private UserValidation user = new UserValidation();
 
     /**
      * Gets owner.
@@ -48,6 +49,9 @@ public class Validation {
     public void setCat(CatValidation catValidation) {
         this.cat = catValidation;
     }
+
+    public UserValidation getUser() {return user; }
+    public void setUser(UserValidation userValidation) { this.user = userValidation; }
 
     /**
      * The type Owner validation.
@@ -115,6 +119,28 @@ public class Validation {
          */
         public void setBreed(int breed) {
             this.breed = breed;
+        }
+    }
+
+    public static class UserValidation {
+        private int username;
+
+        /**
+         * Gets name.
+         *
+         * @return username
+         */
+        public int getUsername() {
+            return username;
+        }
+
+        /**
+         * Sets name.
+         *
+         * @param name the name
+         */
+        public void setUsername(int name) {
+            this.username = name;
         }
     }
 }

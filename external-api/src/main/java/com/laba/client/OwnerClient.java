@@ -1,4 +1,4 @@
-package com.laba.controller;
+package com.laba.client;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

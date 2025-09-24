@@ -1,6 +1,5 @@
-
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-amqp")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation(project(":entityDto"))
-
 }

@@ -6,23 +6,19 @@ import com.laba.entity.User;
 import com.laba.validation.MaxLengthProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
-public class UserDto {
+import java.io.Serializable;
+
+public class UserDto implements Serializable {
 
     private Long id;
 
     @NotBlank(message = "Username must not be blank")
-    @MaxLengthProperty(
-            property = "validation.max-length.username",
-            message = "Username must not exceed {max} characters"
-    )
+    @Size(min=1, max=10)
     private String username;
 
     @NotBlank(message = "Password must not be blank")
-    @MaxLengthProperty(
-            property = "validation.max-length.password",
-            message = "Password must not exceed {max} characters"
-    )
     private String password;
 
     @NotNull(message = "Role must not be null")
@@ -46,6 +42,7 @@ public class UserDto {
         UserDto dto = new UserDto();
         dto.setId(user.getId());
         dto.setUsername(user.getUsername());
+        dto.setPassword(user.getPassword());
         dto.setRole(user.getRole().toString());
 
         if (user.getOwner() != null) {

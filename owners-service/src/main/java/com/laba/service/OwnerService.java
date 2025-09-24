@@ -46,7 +46,7 @@ public interface OwnerService {
      *
      * @param ownerDto the owner dto
      */
-    void updateOwner(OwnerDto ownerDto);
+    OwnerDto updateOwner(OwnerDto ownerDto);
 
     /**
      * Delete owner.
@@ -60,7 +60,7 @@ public interface OwnerService {
      *
      * @param ownerDto the owner dto
      */
-    void saveOwner(OwnerDto ownerDto);
+    OwnerDto saveOwner(OwnerDto ownerDto);
 
     /**
      * Add cat to owner.
